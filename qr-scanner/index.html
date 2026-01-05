@@ -417,6 +417,14 @@
             85% { opacity: 1; transform: translateX(-50%) translateY(0); }
             100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
         }
+
+        /* Version footer */
+        .version-footer {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.7rem;
+            color: var(--gray-300);
+        }
     </style>
 </head>
 <body x-data="scanner()" x-init="init()">
@@ -526,6 +534,9 @@
         <div class="copied-feedback" x-show="showCopied" x-transition>
             Copied to clipboard!
         </div>
+
+        <!-- Version Footer -->
+        <footer class="version-footer">v1.0.0</footer>
     </div>
 
     <script>

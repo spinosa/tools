@@ -50,3 +50,7 @@ When working on this repository:
 3. Document each tool thoroughly in its README
 4. Keep dependencies minimal and CDN-based
 5. Ensure mobile compatibility for camera/sensor-based tools
+6. **IMPORTANT: Bump version number on every push** - Each tool has a version footer (e.g., `v1.0.0`). Increment it on every commit to help debug caching issues:
+   - Patch (1.0.X): Bug fixes, small tweaks
+   - Minor (1.X.0): New features, significant changes
+   - Major (X.0.0): Breaking changes, major rewrites
