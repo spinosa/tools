@@ -560,7 +560,7 @@
         </div>
 
         <!-- Version Footer -->
-        <footer class="version-footer">v1.1.0</footer>
+        <footer class="version-footer">v1.2.0</footer>
     </div>
 
     <script>
@@ -607,21 +607,14 @@
                     await this.initAudio();
 
                     const config = {
-                        fps: 15,
-                        // Use larger scan area for better detection
-                        qrbox: (viewfinderWidth, viewfinderHeight) => {
-                            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                            const size = Math.floor(minEdge * 0.85);
-                            return { width: size, height: size };
-                        },
+                        fps: 20,
+                        // Scan the entire camera frame for better detection
+                        // No qrbox = full frame scanning
                         aspectRatio: 1.0,
                         showTorchButtonIfSupported: true,
                         showZoomSliderIfSupported: true,
-                        defaultZoomValueIfSupported: 2,
-                        // Use native BarcodeDetector API when available
-                        experimentalFeatures: {
-                            useBarCodeDetectorIfSupported: true
-                        }
+                        defaultZoomValueIfSupported: 1,
+                        disableFlip: false
                     };
 
                     // Explicitly support all barcode formats including Data Matrix
