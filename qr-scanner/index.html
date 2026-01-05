@@ -417,54 +417,6 @@
             85% { opacity: 1; transform: translateX(-50%) translateY(0); }
             100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
         }
-
-        /* Debug section */
-        .debug-section {
-            margin-top: 2rem;
-            padding: 1rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .debug-section h3 {
-            font-size: 0.875rem;
-            color: var(--gray-600);
-            margin-bottom: 0.75rem;
-        }
-
-        .debug-buttons {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .debug-btn {
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--gray-300);
-            border-radius: 6px;
-            background: white;
-            font-size: 0.875rem;
-            cursor: pointer;
-        }
-
-        .debug-btn:hover {
-            background: var(--gray-100);
-        }
-
-        .debug-log {
-            background: var(--gray-800);
-            color: #10b981;
-            padding: 0.75rem;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 0.75rem;
-            max-height: 200px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
     </style>
 </head>
 <body x-data="scanner()" x-init="init()">
@@ -574,18 +526,6 @@
         <div class="copied-feedback" x-show="showCopied" x-transition>
             Copied to clipboard!
         </div>
-
-        <!-- Debug Section -->
-        <div class="debug-section">
-            <h3>🔧 Audio Debug</h3>
-            <div class="debug-buttons">
-                <button class="debug-btn" @click="testSound('new')">🔊 Test New Beep</button>
-                <button class="debug-btn" @click="testSound('duplicate')">🔊 Test Duplicate Beep</button>
-                <button class="debug-btn" @click="debugAudioStatus()">📊 Check Status</button>
-                <button class="debug-btn" @click="debugLog = ''">🗑️ Clear Log</button>
-            </div>
-            <div class="debug-log" x-text="debugLog || 'Debug output will appear here...'"></div>
-        </div>
     </div>
 
     <script>
@@ -599,7 +539,6 @@
                 showCopied: false,
                 audioContext: null,
                 lastScan: { value: null, time: 0 },
-                debugLog: '',
 
                 init() {
                     // Load saved codes from localStorage
@@ -634,11 +573,21 @@
 
                     const config = {
                         fps: 10,
-                        qrbox: { width: 250, height: 250 },
+                        // Remove qrbox to scan entire camera frame - helps with barcode orientation
+                        qrbox: (viewfinderWidth, viewfinderHeight) => {
+                            // Use 80% of the viewfinder for scanning area
+                            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                            const size = Math.floor(minEdge * 0.8);
+                            return { width: size, height: size };
+                        },
                         aspectRatio: 1.0,
                         showTorchButtonIfSupported: true,
                         showZoomSliderIfSupported: true,
-                        defaultZoomValueIfSupported: 2
+                        defaultZoomValueIfSupported: 2,
+                        // Use native BarcodeDetector API when available (better orientation support)
+                        experimentalFeatures: {
+                            useBarCodeDetectorIfSupported: true
+                        }
                     };
 
                     this.html5QrcodeScanner = new Html5Qrcode("reader");
@@ -872,46 +821,6 @@
                 formatTime(isoString) {
                     const date = new Date(isoString);
                     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                },
-
-                // Debug methods
-                log(msg) {
-                    const time = new Date().toLocaleTimeString();
-                    this.debugLog = `[${time}] ${msg}\n${this.debugLog}`;
-                },
-
-                async testSound(type) {
-                    this.log(`Testing ${type} sound...`);
-
-                    try {
-                        // Initialize audio if needed (this is a user interaction)
-                        await this.initAudio();
-                        this.log(`AudioContext created/resumed`);
-                        this.log(`State: ${this.audioContext.state}`);
-                        this.log(`Sample rate: ${this.audioContext.sampleRate}`);
-
-                        // Play the beep
-                        await this.playBeep(type === 'duplicate');
-                        this.log(`Sound played successfully!`);
-                    } catch (e) {
-                        this.log(`ERROR: ${e.message}`);
-                    }
-                },
-
-                debugAudioStatus() {
-                    this.log('--- Audio Status ---');
-                    if (!this.audioContext) {
-                        this.log('AudioContext: NOT CREATED');
-                        this.log('Tip: Press "Test Sound" to initialize');
-                    } else {
-                        this.log(`AudioContext: EXISTS`);
-                        this.log(`State: ${this.audioContext.state}`);
-                        this.log(`Sample rate: ${this.audioContext.sampleRate}Hz`);
-                        this.log(`Current time: ${this.audioContext.currentTime.toFixed(2)}s`);
-                        this.log(`Base latency: ${(this.audioContext.baseLatency * 1000).toFixed(1)}ms`);
-                    }
-                    this.log(`User agent: ${navigator.userAgent.substring(0, 50)}...`);
-                    this.log('-------------------');
                 }
             };
         }
