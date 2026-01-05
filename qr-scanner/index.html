@@ -260,8 +260,7 @@
         }
 
         .results-list {
-            max-height: 300px;
-            overflow-y: auto;
+            /* No max-height - let list grow naturally */
         }
 
         .result-item {
@@ -539,6 +538,7 @@
                 toasts: [],
                 showCopied: false,
                 audioContext: null,
+                lastScan: { value: null, time: 0 },
 
                 init() {
                     // Load saved codes from localStorage
@@ -546,16 +546,31 @@
                     if (saved) {
                         this.scannedCodes = JSON.parse(saved);
                     }
-
-                    // Initialize audio context on first user interaction
-                    document.addEventListener('click', () => {
-                        if (!this.audioContext) {
-                            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        }
-                    }, { once: true });
                 },
 
-                startScanning() {
+                // Initialize audio context - must be called from user interaction (button click)
+                async initAudio() {
+                    if (!this.audioContext) {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    // Resume audio context (required for iOS Safari)
+                    if (this.audioContext.state === 'suspended') {
+                        await this.audioContext.resume();
+                    }
+                    // Play a silent sound to fully unlock audio on iOS
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    gainNode.gain.value = 0; // Silent
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    oscillator.start();
+                    oscillator.stop(this.audioContext.currentTime + 0.01);
+                },
+
+                async startScanning() {
+                    // Initialize audio on user interaction (required for iOS Safari)
+                    await this.initAudio();
+
                     const config = {
                         fps: 10,
                         qrbox: { width: 250, height: 250 },
@@ -596,13 +611,22 @@
                 },
 
                 onScanSuccess(decodedText, decodedResult) {
+                    const now = Date.now();
                     const format = decodedResult.result.format?.formatName || 'QR_CODE';
                     const type = this.detectType(decodedText);
-                    const isDuplicate = this.scannedCodes.some(code => code.value === decodedText);
+                    const existingCode = this.scannedCodes.find(code => code.value === decodedText);
+                    const isDuplicate = !!existingCode;
+
+                    // Check if this is the same code scanned within 3 seconds - if so, ignore completely
+                    if (this.lastScan.value === decodedText && (now - this.lastScan.time) < 3000) {
+                        return; // Ignore rapid re-scan of same code
+                    }
+
+                    // Update last scan tracking
+                    this.lastScan = { value: decodedText, time: now };
 
                     if (isDuplicate) {
                         // Update scan count for existing code
-                        const existingCode = this.scannedCodes.find(code => code.value === decodedText);
                         existingCode.scanCount++;
                         existingCode.lastScanned = new Date().toISOString();
                         this.playBeep(true);
@@ -669,9 +693,19 @@
                     return icons[type] || '📄';
                 },
 
-                playBeep(isDuplicate) {
+                async playBeep(isDuplicate) {
                     if (!this.audioContext) {
-                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        return; // Audio not initialized yet
+                    }
+
+                    // Ensure audio context is running (iOS may suspend it)
+                    if (this.audioContext.state === 'suspended') {
+                        try {
+                            await this.audioContext.resume();
+                        } catch (e) {
+                            console.warn('Could not resume audio context:', e);
+                            return;
+                        }
                     }
 
                     const oscillator = this.audioContext.createOscillator();
@@ -684,27 +718,29 @@
                         // Double lower beep for duplicate
                         oscillator.frequency.value = 400;
                         oscillator.type = 'sine';
-                        gainNode.gain.value = 0.3;
+                        gainNode.gain.value = 0.5;
                         oscillator.start();
                         oscillator.stop(this.audioContext.currentTime + 0.1);
 
                         // Second beep
                         setTimeout(() => {
-                            const osc2 = this.audioContext.createOscillator();
-                            const gain2 = this.audioContext.createGain();
-                            osc2.connect(gain2);
-                            gain2.connect(this.audioContext.destination);
-                            osc2.frequency.value = 300;
-                            osc2.type = 'sine';
-                            gain2.gain.value = 0.3;
-                            osc2.start();
-                            osc2.stop(this.audioContext.currentTime + 0.1);
+                            if (this.audioContext && this.audioContext.state === 'running') {
+                                const osc2 = this.audioContext.createOscillator();
+                                const gain2 = this.audioContext.createGain();
+                                osc2.connect(gain2);
+                                gain2.connect(this.audioContext.destination);
+                                osc2.frequency.value = 300;
+                                osc2.type = 'sine';
+                                gain2.gain.value = 0.5;
+                                osc2.start();
+                                osc2.stop(this.audioContext.currentTime + 0.1);
+                            }
                         }, 120);
                     } else {
                         // Single higher beep for new code
                         oscillator.frequency.value = 800;
                         oscillator.type = 'sine';
-                        gainNode.gain.value = 0.3;
+                        gainNode.gain.value = 0.5;
                         oscillator.start();
                         oscillator.stop(this.audioContext.currentTime + 0.15);
                     }
