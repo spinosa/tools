@@ -245,6 +245,25 @@
             font-size: 0.75rem;
         }
 
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .copy-all-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .copy-all-btn:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
         .clear-btn {
             background: none;
             border: none;
@@ -485,9 +504,14 @@
                     Scanned Codes
                     <span class="count-badge" x-show="scannedCodes.length > 0" x-text="scannedCodes.length"></span>
                 </h2>
-                <button class="clear-btn" x-show="scannedCodes.length > 0" @click="clearAll()">
-                    Clear All
-                </button>
+                <div class="header-actions" x-show="scannedCodes.length > 0">
+                    <button class="copy-all-btn" @click="copyAllCodes()">
+                        📋 Copy All
+                    </button>
+                    <button class="clear-btn" @click="clearAll()">
+                        Clear All
+                    </button>
+                </div>
             </div>
 
             <div class="results-list">
@@ -536,7 +560,7 @@
         </div>
 
         <!-- Version Footer -->
-        <footer class="version-footer">v1.0.0</footer>
+        <footer class="version-footer">v1.1.0</footer>
     </div>
 
     <script>
@@ -809,6 +833,18 @@
 
                 copyToClipboard(value) {
                     navigator.clipboard.writeText(value).then(() => {
+                        this.showCopied = true;
+                        setTimeout(() => {
+                            this.showCopied = false;
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                    });
+                },
+
+                copyAllCodes() {
+                    const allCodes = this.scannedCodes.map(code => code.value).join('\n');
+                    navigator.clipboard.writeText(allCodes).then(() => {
                         this.showCopied = true;
                         setTimeout(() => {
                             this.showCopied = false;
