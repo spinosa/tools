@@ -2,20 +2,9 @@
 
 A simple, mobile-friendly QR code and barcode scanner that runs entirely in the browser.
 
-## Quick Start - GitHub Gist Preview
+## Quick Start
 
-To use this tool immediately, open this URL on your mobile device:
-
-```
-https://gistpreview.github.io/?https://github.com/[username]/tools/blob/main/qr-scanner/index.html
-```
-
-Replace `[username]` with the actual GitHub username or organization where this repository is hosted.
-
-**Alternative:** You can also use raw.githack.com:
-```
-https://raw.githack.com/[username]/tools/main/qr-scanner/index.html
-```
+**[Open QR Scanner](https://raw.githack.com/spinosa/tools/claude/setup-qr-scanner-uJdqa/qr-scanner/index.html)** - works on mobile or desktop with a camera.
 
 ## Features
 
