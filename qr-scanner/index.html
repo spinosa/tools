@@ -572,25 +572,41 @@
                     await this.initAudio();
 
                     const config = {
-                        fps: 10,
-                        // Remove qrbox to scan entire camera frame - helps with barcode orientation
+                        fps: 15,
+                        // Use larger scan area for better detection
                         qrbox: (viewfinderWidth, viewfinderHeight) => {
-                            // Use 80% of the viewfinder for scanning area
                             const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                            const size = Math.floor(minEdge * 0.8);
+                            const size = Math.floor(minEdge * 0.85);
                             return { width: size, height: size };
                         },
                         aspectRatio: 1.0,
                         showTorchButtonIfSupported: true,
                         showZoomSliderIfSupported: true,
                         defaultZoomValueIfSupported: 2,
-                        // Use native BarcodeDetector API when available (better orientation support)
+                        // Use native BarcodeDetector API when available
                         experimentalFeatures: {
                             useBarCodeDetectorIfSupported: true
                         }
                     };
 
-                    this.html5QrcodeScanner = new Html5Qrcode("reader");
+                    // Explicitly support all barcode formats including Data Matrix
+                    const formatsToSupport = [
+                        Html5QrcodeSupportedFormats.QR_CODE,
+                        Html5QrcodeSupportedFormats.DATA_MATRIX,
+                        Html5QrcodeSupportedFormats.AZTEC,
+                        Html5QrcodeSupportedFormats.PDF_417,
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E,
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.CODE_93,
+                        Html5QrcodeSupportedFormats.CODABAR,
+                        Html5QrcodeSupportedFormats.ITF
+                    ];
+
+                    this.html5QrcodeScanner = new Html5Qrcode("reader", { formatsToSupport });
 
                     this.html5QrcodeScanner.start(
                         { facingMode: "environment" },
