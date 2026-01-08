@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QR & Barcode Scanner</title>
+
+    <!-- Alpine.js for reactivity -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- html5-qrcode for scanning -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-600: #4b5563;
+            --gray-800: #1f2937;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--gray-100);
+            min-height: 100vh;
+            color: var(--gray-800);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 1rem 0;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            color: var(--gray-800);
+        }
+
+        /* Scanner Section */
+        .scanner-section {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            background: #000;
+        }
+
+        .video-container video {
+            width: 100%;
+            display: block;
+        }
+
+        .video-container canvas {
+            display: none;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            flex: 1;
+            padding: 0.875rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-secondary {
+            background: var(--gray-200);
+            color: var(--gray-800);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-300);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Toast Notification */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: calc(100% - 2rem);
+            max-width: 400px;
+        }
+
+        .toast {
+            background: var(--success);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toast.duplicate {
+            background: var(--warning);
+        }
+
+        .toast-icon {
+            font-size: 1.5rem;
+        }
+
+        .toast-content {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .toast-message {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Results List */
+        .results-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .results-header h2 {
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .count-badge {
+            background: var(--primary);
+            color: white;
+            padding: 0.125rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .copy-all-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .copy-all-btn:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .clear-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 0.875rem;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .clear-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .results-list {
+            /* No max-height - let list grow naturally */
+        }
+
+        .result-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gray-100);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.25rem;
+        }
+
+        .result-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .result-type {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .result-value {
+            word-break: break-all;
+            font-size: 0.9rem;
+        }
+
+        .result-value a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .result-value a:hover {
+            text-decoration: underline;
+        }
+
+        .result-meta {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            margin-top: 0.25rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .scan-count {
+            background: var(--warning);
+            color: white;
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            color: var(--gray-600);
+            font-size: 1rem;
+        }
+
+        .action-btn:hover {
+            background: var(--gray-100);
+            color: var(--gray-800);
+        }
+
+        .action-btn.delete:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        /* Empty State */
+        .empty-state {
+            padding: 3rem 1rem;
+            text-align: center;
+            color: var(--gray-600);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Status indicator */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gray-300);
+        }
+
+        .status-dot.active {
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Copy feedback */
+        .copied-feedback {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gray-800);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            animation: fadeInOut 2s ease;
+            z-index: 1000;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+
+        /* Version footer */
+        .version-footer {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.7rem;
+            color: var(--gray-300);
+        }
+
+        /* Preprocessing controls */
+        .preprocess-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--gray-600);
+            background: var(--gray-100);
+            flex-wrap: wrap;
+        }
+
+        .preprocess-toggle label {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            cursor: pointer;
+        }
+
+        .preprocess-toggle input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        /* Debug panel */
+        .debug-panel {
+            background: #1a1a2e;
+            color: #0f0;
+            font-family: monospace;
+            font-size: 0.7rem;
+            padding: 0.5rem;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .debug-log {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .debug-log .err { color: #f55; }
+        .debug-log .ok { color: #5f5; }
+        .debug-log .info { color: #5af; }
+
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body x-data="scanner()" x-init="init()">
+    <div class="container">
+        <header>
+            <h1>📱 QR & Barcode Scanner</h1>
+        </header>
+
+        <!-- Toast Notifications -->
+        <div class="toast-container">
+            <template x-for="toast in toasts" :key="toast.id">
+                <div class="toast" :class="{ 'duplicate': toast.isDuplicate }">
+                    <span class="toast-icon" x-text="toast.isDuplicate ? '🔄' : '✅'"></span>
+                    <div class="toast-content">
+                        <div class="toast-title" x-text="toast.isDuplicate ? 'Already Scanned' : 'New Code Found!'"></div>
+                        <div class="toast-message" x-text="toast.value"></div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Scanner -->
+        <div class="scanner-section" x-show="!showListOnly">
+            <div class="video-container">
+                <video id="video" playsinline autoplay muted></video>
+                <canvas id="canvas"></canvas>
+                <canvas id="processCanvas"></canvas>
+                <div id="qr-shim" style="display:none;"></div>
+            </div>
+            <div class="preprocess-toggle">
+                <label>
+                    <input type="checkbox" x-model="enhanceContrast">
+                    Enhanced mode (for shiny/metal surfaces)
+                </label>
+                <label style="margin-left: 1rem;">
+                    <input type="checkbox" x-model="debugMode">
+                    Debug
+                </label>
+            </div>
+            <div class="debug-panel" x-show="debugMode" x-cloak>
+                <div class="debug-log" x-html="debugLog"></div>
+            </div>
+            <div class="status-bar">
+                <span class="status-dot" :class="{ 'active': isScanning }"></span>
+                <span x-text="isScanning ? 'Scanning...' : 'Scanner ready'"></span>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <template x-if="!isScanning && !showListOnly">
+                <button class="btn btn-primary" @click="startScanning()">
+                    <span>📷</span> Start Scanning
+                </button>
+            </template>
+            <template x-if="isScanning">
+                <button class="btn btn-danger" @click="stopScanning()">
+                    <span>⏹️</span> Stop Scanning
+                </button>
+            </template>
+            <template x-if="showListOnly">
+                <button class="btn btn-primary" @click="showListOnly = false; startScanning()">
+                    <span>📷</span> Resume Scanning
+                </button>
+            </template>
+            <button class="btn btn-secondary" @click="toggleListView()" :disabled="scannedCodes.length === 0">
+                <span x-text="showListOnly ? '🔙' : '📋'"></span>
+                <span x-text="showListOnly ? 'Back' : 'View List'"></span>
+            </button>
+        </div>
+
+        <!-- Results List -->
+        <div class="results-section">
+            <div class="results-header">
+                <h2>
+                    Scanned Codes
+                    <span class="count-badge" x-show="scannedCodes.length > 0" x-text="scannedCodes.length"></span>
+                </h2>
+                <div class="header-actions" x-show="scannedCodes.length > 0">
+                    <button class="copy-all-btn" @click="copyAllCodes()">
+                        📋 Copy All
+                    </button>
+                    <button class="clear-btn" @click="clearAll()">
+                        Clear All
+                    </button>
+                </div>
+            </div>
+
+            <div class="results-list">
+                <template x-if="scannedCodes.length === 0">
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p>No codes scanned yet</p>
+                        <p style="font-size: 0.8rem; margin-top: 0.5rem;">Point your camera at a QR code or barcode</p>
+                    </div>
+                </template>
+
+                <template x-for="(item, index) in scannedCodes" :key="item.id">
+                    <div class="result-item">
+                        <div class="result-icon" x-text="getTypeIcon(item.type)"></div>
+                        <div class="result-content">
+                            <div class="result-type" x-text="item.format + ' • ' + item.type"></div>
+                            <div class="result-value">
+                                <template x-if="item.type === 'url'">
+                                    <a :href="item.value" target="_blank" rel="noopener" x-text="item.value"></a>
+                                </template>
+                                <template x-if="item.type !== 'url'">
+                                    <span x-text="item.value"></span>
+                                </template>
+                            </div>
+                            <div class="result-meta">
+                                <span x-text="formatTime(item.firstScanned)"></span>
+                                <span class="scan-count" x-show="item.scanCount > 1" x-text="'×' + item.scanCount"></span>
+                            </div>
+                        </div>
+                        <div class="result-actions">
+                            <button class="action-btn" @click="copyToClipboard(item.value)" title="Copy">
+                                📋
+                            </button>
+                            <button class="action-btn delete" @click="removeItem(index)" title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Copy Feedback -->
+        <div class="copied-feedback" x-show="showCopied" x-transition>
+            Copied to clipboard!
+        </div>
+
+        <!-- Version Footer -->
+        <footer class="version-footer">v2.0.3</footer>
+    </div>
+
+    <script>
+        function scanner() {
+            return {
+                isScanning: false,
+                showListOnly: false,
+                scannedCodes: [],
+                toasts: [],
+                showCopied: false,
+                audioContext: null,
+                lastScan: { value: null, time: 0 },
+                enhanceContrast: true,
+                debugMode: false,
+                debugLog: '',
+                scanCount: 0,
+
+                // Scanner internals
+                video: null,
+                canvas: null,
+                ctx: null,
+                processCanvas: null,
+                processCtx: null,
+                stream: null,
+                scanInterval: null,
+                html5Qrcode: null,
+
+                init() {
+                    // Load saved codes from localStorage
+                    const saved = localStorage.getItem('scannedCodes');
+                    if (saved) {
+                        this.scannedCodes = JSON.parse(saved);
+                    }
+
+                    // Get DOM elements
+                    this.video = document.getElementById('video');
+                    this.canvas = document.getElementById('canvas');
+                    this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+                    this.processCanvas = document.getElementById('processCanvas');
+                    this.processCtx = this.processCanvas.getContext('2d', { willReadFrequently: true });
+
+                    // Initialize html5-qrcode for scanning processed images
+                    const formatsToSupport = [
+                        Html5QrcodeSupportedFormats.QR_CODE,
+                        Html5QrcodeSupportedFormats.DATA_MATRIX,
+                        Html5QrcodeSupportedFormats.AZTEC,
+                        Html5QrcodeSupportedFormats.PDF_417,
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E,
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.CODE_93,
+                        Html5QrcodeSupportedFormats.CODABAR,
+                        Html5QrcodeSupportedFormats.ITF
+                    ];
+                    this.html5Qrcode = new Html5Qrcode("qr-shim", { formatsToSupport });
+                },
+
+                async initAudio() {
+                    if (!this.audioContext) {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    if (this.audioContext.state === 'suspended') {
+                        await this.audioContext.resume();
+                    }
+                    // Play silent sound to unlock iOS audio
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    gainNode.gain.value = 0;
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    oscillator.start();
+                    oscillator.stop(this.audioContext.currentTime + 0.01);
+                },
+
+                async startScanning() {
+                    await this.initAudio();
+
+                    try {
+                        // Request camera with higher resolution for better scanning
+                        this.stream = await navigator.mediaDevices.getUserMedia({
+                            video: {
+                                facingMode: 'environment',
+                                width: { ideal: 1920 },
+                                height: { ideal: 1080 }
+                            }
+                        });
+
+                        this.video.srcObject = this.stream;
+                        await this.video.play();
+
+                        // Wait for video to be ready
+                        await new Promise(resolve => {
+                            this.video.onloadedmetadata = () => {
+                                this.canvas.width = this.video.videoWidth;
+                                this.canvas.height = this.video.videoHeight;
+                                this.processCanvas.width = this.video.videoWidth;
+                                this.processCanvas.height = this.video.videoHeight;
+                                resolve();
+                            };
+                        });
+
+                        this.isScanning = true;
+                        this.scanCount = 0;
+                        this.log(`<span class="info">Camera started: ${this.video.videoWidth}x${this.video.videoHeight}</span>`);
+                        this.startScanLoop();
+
+                    } catch (err) {
+                        console.error("Camera error:", err);
+                        alert("Unable to access camera. Please ensure you've granted camera permissions.");
+                    }
+                },
+
+                async stopScanning() {
+                    this.isScanning = false;
+
+                    if (this.scanInterval) {
+                        clearInterval(this.scanInterval);
+                        this.scanInterval = null;
+                    }
+
+                    if (this.stream) {
+                        this.stream.getTracks().forEach(track => track.stop());
+                        this.stream = null;
+                    }
+
+                    if (this.video) {
+                        this.video.srcObject = null;
+                    }
+                },
+
+                startScanLoop() {
+                    // Scan every 150ms (roughly 7 fps for processing)
+                    this.scanInterval = setInterval(() => {
+                        if (!this.isScanning) return;
+                        this.captureAndScan();
+                    }, 150);
+                },
+
+                async captureAndScan() {
+                    if (!this.video || this.video.readyState !== 4) return;
+
+                    // Draw current frame to canvas
+                    this.ctx.drawImage(this.video, 0, 0);
+
+                    let imageData;
+
+                    if (this.enhanceContrast) {
+                        // Apply preprocessing for shiny/metal surfaces
+                        imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                        this.preprocessImage(imageData);
+                        this.processCtx.putImageData(imageData, 0, 0);
+                    }
+
+                    try {
+                        // Convert canvas to blob and scan
+                        const canvasToUse = this.enhanceContrast ? this.processCanvas : this.canvas;
+                        const blob = await new Promise(resolve => canvasToUse.toBlob(resolve, 'image/png'));
+                        const file = new File([blob], "frame.png", { type: "image/png" });
+
+                        this.scanCount++;
+                        const result = await this.html5Qrcode.scanFileV2(file, false);
+
+                        if (this.debugMode) {
+                            const fmt = result?.result?.format?.formatName || 'unknown';
+                            this.log(`<span class="ok">✓ FOUND [${fmt}]: ${result.decodedText.substring(0, 50)}</span>`);
+                        }
+                        this.onScanSuccess(result.decodedText, result);
+                    } catch (err) {
+                        // Log errors in debug mode
+                        if (this.debugMode && this.scanCount % 10 === 0) {
+                            const msg = err?.message || String(err);
+                            // Truncate long error messages
+                            const shortMsg = msg.length > 80 ? msg.substring(0, 80) + '...' : msg;
+                            this.log(`<span class="err">#${this.scanCount} ${shortMsg}</span>`);
+                        }
+                    }
+                },
+
+                log(message) {
+                    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    this.debugLog = `[${time}] ${message}\n` + this.debugLog;
+                    // Keep log from getting too long
+                    if (this.debugLog.length > 5000) {
+                        this.debugLog = this.debugLog.substring(0, 4000);
+                    }
+                },
+
+                preprocessImage(imageData) {
+                    const data = imageData.data;
+                    const width = imageData.width;
+                    const height = imageData.height;
+
+                    // Step 1: Convert to grayscale and collect histogram
+                    const grayscale = new Uint8Array(width * height);
+                    const histogram = new Array(256).fill(0);
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        // Luminance formula
+                        const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+                        grayscale[i / 4] = gray;
+                        histogram[gray]++;
+                    }
+
+                    // Step 2: Calculate histogram stretching (contrast enhancement)
+                    // Find 1st and 99th percentile for aggressive stretching on reflective surfaces
+                    const totalPixels = width * height;
+                    let minVal = 0, maxVal = 255;
+                    let cumSum = 0;
+
+                    for (let i = 0; i < 256; i++) {
+                        cumSum += histogram[i];
+                        if (cumSum >= totalPixels * 0.01 && minVal === 0) {
+                            minVal = i;
+                        }
+                        if (cumSum >= totalPixels * 0.99) {
+                            maxVal = i;
+                            break;
+                        }
+                    }
+
+                    const range = maxVal - minVal || 1;
+
+                    // Step 3: Apply contrast stretch (grayscale output, no binary threshold)
+                    // This preserves gradient information which helps QR scanners
+                    for (let i = 0; i < data.length; i += 4) {
+                        const gray = grayscale[i / 4];
+                        let stretched = Math.round(((gray - minVal) / range) * 255);
+                        stretched = Math.max(0, Math.min(255, stretched));
+
+                        data[i] = stretched;
+                        data[i + 1] = stretched;
+                        data[i + 2] = stretched;
+                    }
+                },
+
+                onScanSuccess(decodedText, decodedResult) {
+                    const now = Date.now();
+                    const format = decodedResult?.result?.format?.formatName || 'CODE';
+                    const type = this.detectType(decodedText);
+                    const existingCode = this.scannedCodes.find(code => code.value === decodedText);
+                    const isDuplicate = !!existingCode;
+
+                    // Ignore rapid re-scan of same code (within 3 seconds)
+                    if (this.lastScan.value === decodedText && (now - this.lastScan.time) < 3000) {
+                        return;
+                    }
+
+                    this.lastScan = { value: decodedText, time: now };
+
+                    if (isDuplicate) {
+                        existingCode.scanCount++;
+                        existingCode.lastScanned = new Date().toISOString();
+                        this.playBeep(true);
+                    } else {
+                        this.scannedCodes.unshift({
+                            id: Date.now(),
+                            value: decodedText,
+                            format: format,
+                            type: type,
+                            firstScanned: new Date().toISOString(),
+                            lastScanned: new Date().toISOString(),
+                            scanCount: 1
+                        });
+                        this.playBeep(false);
+                    }
+
+                    this.saveToStorage();
+                    this.showToast(decodedText, isDuplicate);
+                },
+
+                detectType(value) {
+                    if (/^https?:\/\//i.test(value)) return 'url';
+                    if (/^mailto:/i.test(value) || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'email';
+                    if (/^tel:/i.test(value) || /^\+?[\d\s\-()]{10,}$/.test(value)) return 'phone';
+                    if (/^WIFI:/i.test(value)) return 'wifi';
+                    if (/^BEGIN:VCARD/i.test(value)) return 'contact';
+                    if (/^\d+$/.test(value)) return 'number';
+                    return 'text';
+                },
+
+                getTypeIcon(type) {
+                    const icons = {
+                        'url': '🔗', 'email': '📧', 'phone': '📞',
+                        'wifi': '📶', 'contact': '👤', 'number': '🔢', 'text': '📝'
+                    };
+                    return icons[type] || '📄';
+                },
+
+                async playBeep(isDuplicate) {
+                    if (!this.audioContext) return;
+                    if (this.audioContext.state === 'suspended') {
+                        try { await this.audioContext.resume(); } catch (e) { return; }
+                    }
+
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+
+                    if (isDuplicate) {
+                        oscillator.frequency.value = 400;
+                        oscillator.type = 'sine';
+                        gainNode.gain.value = 0.5;
+                        oscillator.start();
+                        oscillator.stop(this.audioContext.currentTime + 0.1);
+                        setTimeout(() => {
+                            if (this.audioContext?.state === 'running') {
+                                const osc2 = this.audioContext.createOscillator();
+                                const gain2 = this.audioContext.createGain();
+                                osc2.connect(gain2);
+                                gain2.connect(this.audioContext.destination);
+                                osc2.frequency.value = 300;
+                                osc2.type = 'sine';
+                                gain2.gain.value = 0.5;
+                                osc2.start();
+                                osc2.stop(this.audioContext.currentTime + 0.1);
+                            }
+                        }, 120);
+                    } else {
+                        oscillator.frequency.value = 800;
+                        oscillator.type = 'sine';
+                        gainNode.gain.value = 0.5;
+                        oscillator.start();
+                        oscillator.stop(this.audioContext.currentTime + 0.15);
+                    }
+                },
+
+                showToast(value, isDuplicate) {
+                    const toast = { id: Date.now(), value, isDuplicate };
+                    this.toasts.push(toast);
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter(t => t.id !== toast.id);
+                    }, 2000);
+                },
+
+                async toggleListView() {
+                    if (this.isScanning) await this.stopScanning();
+                    this.showListOnly = !this.showListOnly;
+                },
+
+                copyToClipboard(value) {
+                    navigator.clipboard.writeText(value).then(() => {
+                        this.showCopied = true;
+                        setTimeout(() => { this.showCopied = false; }, 2000);
+                    }).catch(err => console.error('Failed to copy:', err));
+                },
+
+                copyAllCodes() {
+                    const allCodes = this.scannedCodes.map(code => code.value).join('\n');
+                    navigator.clipboard.writeText(allCodes).then(() => {
+                        this.showCopied = true;
+                        setTimeout(() => { this.showCopied = false; }, 2000);
+                    }).catch(err => console.error('Failed to copy:', err));
+                },
+
+                removeItem(index) {
+                    this.scannedCodes.splice(index, 1);
+                    this.saveToStorage();
+                },
+
+                async clearAll() {
+                    const wasScanning = this.isScanning;
+                    if (wasScanning) await this.stopScanning();
+                    if (confirm('Are you sure you want to clear all scanned codes?')) {
+                        this.scannedCodes = [];
+                        this.saveToStorage();
+                    }
+                    if (wasScanning) await this.startScanning();
+                },
+
+                saveToStorage() {
+                    localStorage.setItem('scannedCodes', JSON.stringify(this.scannedCodes));
+                },
+
+                formatTime(isoString) {
+                    return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+            };
+        }
+    </script>
+</body>
+</html>
