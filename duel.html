@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Duel - 1776</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes smoke {
+            0% { opacity: 0.8; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(2); }
+        }
+
+        @keyframes recoil-left {
+            0% { transform: rotate(-45deg) translateX(0); }
+            20% { transform: rotate(-30deg) translateX(-10px); }
+            100% { transform: rotate(-45deg) translateX(0); }
+        }
+
+        @keyframes recoil-right {
+            0% { transform: rotate(45deg) scaleX(-1) translateX(0); }
+            20% { transform: rotate(30deg) scaleX(-1) translateX(-10px); }
+            100% { transform: rotate(45deg) scaleX(-1) translateX(0); }
+        }
+
+        @keyframes raise-left {
+            0% { transform: rotate(-45deg); }
+            100% { transform: rotate(-120deg); }
+        }
+
+        @keyframes raise-right {
+            0% { transform: rotate(45deg) scaleX(-1); }
+            100% { transform: rotate(120deg) scaleX(-1); }
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(to bottom, #2c1810 0%, #4a3020 50%, #3d2817 100%);
+            min-height: 100vh;
+            color: #f4e4bc;
+            overflow: hidden;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-image:
+                radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%);
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+            border-bottom: 3px solid #8b6914;
+        }
+
+        .title {
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8), 0 0 20px rgba(139,105,20,0.5);
+            letter-spacing: 8px;
+            color: #daa520;
+            animation: flicker 3s infinite;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            font-style: italic;
+            color: #c9a959;
+            margin-top: 5px;
+        }
+
+        /* Main Arena */
+        .arena {
+            flex: 1;
+            display: flex;
+            position: relative;
+        }
+
+        /* Player Sides */
+        .player-side {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            position: relative;
+        }
+
+        .player-left {
+            background: linear-gradient(135deg, rgba(70,40,20,0.8) 0%, transparent 100%);
+            border-right: 2px solid rgba(139,105,20,0.3);
+        }
+
+        .player-right {
+            background: linear-gradient(225deg, rgba(70,40,20,0.8) 0%, transparent 100%);
+            border-left: 2px solid rgba(139,105,20,0.3);
+        }
+
+        /* Player Stats */
+        .player-stats {
+            background: linear-gradient(to bottom, #3d2817, #2c1810);
+            border: 3px solid #8b6914;
+            border-radius: 10px;
+            padding: 15px 25px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        .player-name {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #daa520;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            margin-bottom: 10px;
+            border-bottom: 2px solid #8b6914;
+            padding-bottom: 5px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 1.1rem;
+        }
+
+        .stat-label {
+            color: #c9a959;
+        }
+
+        .stat-value {
+            color: #f4e4bc;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .level-display {
+            margin-top: 10px;
+            padding: 8px 15px;
+            background: linear-gradient(to bottom, #8b6914, #6b4a0a);
+            border-radius: 5px;
+            font-size: 1.2rem;
+        }
+
+        .level-title {
+            font-size: 0.9rem;
+            color: #f4e4bc;
+        }
+
+        .level-name {
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        /* Duelist Display */
+        .duelist-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .duelist {
+            position: relative;
+            width: 200px;
+            height: 350px;
+        }
+
+        .duelist-body {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .pistol-container {
+            position: absolute;
+            width: 120px;
+            height: 60px;
+            transition: transform 0.3s ease;
+        }
+
+        .player-left .pistol-container {
+            right: -20px;
+            top: 100px;
+            transform: rotate(-45deg);
+            transform-origin: left center;
+        }
+
+        .player-right .pistol-container {
+            left: -20px;
+            top: 100px;
+            transform: rotate(45deg) scaleX(-1);
+            transform-origin: right center;
+        }
+
+        .pistol-container.firing-left {
+            animation: recoil-left 0.3s ease-out;
+        }
+
+        .pistol-container.firing-right {
+            animation: recoil-right 0.3s ease-out;
+        }
+
+        .pistol-container.raised-left {
+            animation: raise-left 0.5s ease-out forwards;
+        }
+
+        .pistol-container.raised-right {
+            animation: raise-right 0.5s ease-out forwards;
+        }
+
+        .smoke-effect {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, rgba(200,200,200,0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .smoke-effect.active {
+            animation: smoke 1s ease-out forwards;
+        }
+
+        .player-left .smoke-effect {
+            right: -60px;
+            top: 80px;
+        }
+
+        .player-right .smoke-effect {
+            left: -60px;
+            top: 80px;
+        }
+
+        /* Controls Display */
+        .controls-display {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid #8b6914;
+            border-radius: 8px;
+            padding: 10px 20px;
+            text-align: center;
+        }
+
+        .control-key {
+            display: inline-block;
+            background: linear-gradient(to bottom, #4a3020, #2c1810);
+            border: 2px solid #8b6914;
+            border-radius: 5px;
+            padding: 5px 12px;
+            margin: 3px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #daa520;
+            box-shadow: 0 3px 0 #1a0f08, 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            color: #c9a959;
+            margin-left: 5px;
+        }
+
+        /* Center Area - Countdown */
+        .center-area {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+        }
+
+        .countdown-lights {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 30px;
+            background: linear-gradient(to bottom, #1a1a1a, #2d2d2d);
+            border: 4px solid #444;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 2px 0 rgba(255,255,255,0.1);
+        }
+
+        .light-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .light {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #333;
+            border: 3px solid #555;
+            box-shadow: inset 0 -5px 10px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+        }
+
+        .light.red-on {
+            background: radial-gradient(circle at 30% 30%, #ff6666, #cc0000);
+            box-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000, inset 0 -5px 10px rgba(0,0,0,0.3);
+        }
+
+        .light.green-on {
+            background: radial-gradient(circle at 30% 30%, #66ff66, #00cc00);
+            box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00, inset 0 -5px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Messages */
+        .message-display {
+            position: absolute;
+            left: 50%;
+            top: 30%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 20;
+        }
+
+        .message-text {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            padding: 20px 40px;
+            background: rgba(0,0,0,0.7);
+            border: 3px solid #8b6914;
+            border-radius: 10px;
+        }
+
+        .message-text.winner {
+            color: #ffd700;
+            animation: pulse 0.5s infinite;
+        }
+
+        .message-text.draw {
+            color: #87ceeb;
+        }
+
+        .message-text.early {
+            color: #ff6b6b;
+            animation: shake 0.3s infinite;
+        }
+
+        .message-text.honor {
+            color: #9370db;
+        }
+
+        /* Action Display */
+        .action-display {
+            position: absolute;
+            bottom: 150px;
+            font-size: 1.5rem;
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 8px;
+            border: 2px solid #8b6914;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .action-display.visible {
+            opacity: 1;
+        }
+
+        .action-display.shot {
+            color: #ff6b6b;
+        }
+
+        .action-display.reconsidered {
+            color: #87ceeb;
+        }
+
+        .action-display.early {
+            color: #ff4444;
+        }
+
+        .player-left .action-display {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .player-right .action-display {
+            right: 50%;
+            transform: translateX(50%);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+            border-top: 2px solid #8b6914;
+        }
+
+        .start-btn {
+            background: linear-gradient(to bottom, #8b6914, #6b4a0a);
+            color: #f4e4bc;
+            border: 3px solid #daa520;
+            padding: 15px 50px;
+            font-size: 1.5rem;
+            font-family: 'Georgia', serif;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .start-btn:hover {
+            background: linear-gradient(to bottom, #a07818, #8b6914);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+        }
+
+        .start-btn:active {
+            transform: translateY(0);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .reset-btn {
+            background: linear-gradient(to bottom, #5a3020, #3a1810);
+            color: #c9a959;
+            border: 2px solid #8b6914;
+            padding: 8px 20px;
+            font-size: 1rem;
+            font-family: 'Georgia', serif;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-left: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .reset-btn:hover {
+            background: linear-gradient(to bottom, #6a4030, #4a2820);
+        }
+
+        /* Instructions Modal */
+        .instructions-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .instructions-overlay.hidden {
+            display: none;
+        }
+
+        .instructions-box {
+            background: linear-gradient(to bottom, #3d2817, #2c1810);
+            border: 4px solid #8b6914;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 700px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(139,105,20,0.3);
+        }
+
+        .instructions-box h2 {
+            color: #daa520;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #8b6914;
+            padding-bottom: 10px;
+        }
+
+        .instructions-box p {
+            margin: 15px 0;
+            line-height: 1.6;
+            color: #f4e4bc;
+        }
+
+        .instructions-box .rules {
+            text-align: left;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+        }
+
+        .instructions-box .rules li {
+            margin: 10px 0;
+            color: #c9a959;
+        }
+
+        .instructions-box .keys-display {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+        }
+
+        .key-group {
+            text-align: center;
+        }
+
+        .key-group h3 {
+            color: #daa520;
+            margin-bottom: 10px;
+        }
+
+        .begin-btn {
+            background: linear-gradient(to bottom, #8b6914, #6b4a0a);
+            color: #f4e4bc;
+            border: 3px solid #daa520;
+            padding: 15px 60px;
+            font-size: 1.3rem;
+            font-family: 'Georgia', serif;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-top: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .begin-btn:hover {
+            background: linear-gradient(to bottom, #a07818, #8b6914);
+        }
+
+        /* Level Stars */
+        .level-stars {
+            color: #ffd700;
+            font-size: 1.2rem;
+            letter-spacing: 3px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Instructions Overlay -->
+    <div class="instructions-overlay" id="instructionsOverlay">
+        <div class="instructions-box">
+            <h2>⚔ The Duel of Honor ⚔</h2>
+            <p><em>Philadelphia, 1776</em></p>
+            <p>Two gentlemen of the Continental Congress settle their differences in the time-honored tradition.</p>
+
+            <div class="rules">
+                <h3 style="color: #daa520; text-align: center;">Rules of Engagement</h3>
+                <ul>
+                    <li><strong>Wait for the green light!</strong> Shooting early means your shot goes wide.</li>
+                    <li><strong>First to fire after green wins</strong> - unless they shot early!</li>
+                    <li><strong>Reconsider</strong> - raise your pistol to spare your opponent. Only revealed after green.</li>
+                    <li>If you reconsider but your opponent shoots you: they win but lose honor (down a level)</li>
+                    <li>If both reconsider: both gain honor (up a level)</li>
+                    <li>Win 3 duels in a row to gain honor (up a level)</li>
+                </ul>
+            </div>
+
+            <div class="keys-display">
+                <div class="key-group">
+                    <h3>Left Duelist</h3>
+                    <div><span class="control-key">Q</span><span class="control-label">Fire!</span></div>
+                    <div style="margin-top: 10px;"><span class="control-key">A</span><span class="control-label">Reconsider</span></div>
+                </div>
+                <div class="key-group">
+                    <h3>Right Duelist</h3>
+                    <div><span class="control-key">L</span><span class="control-label">Fire!</span></div>
+                    <div style="margin-top: 10px;"><span class="control-key">P</span><span class="control-label">Reconsider</span></div>
+                </div>
+            </div>
+
+            <button class="begin-btn" onclick="closeInstructions()">Enter the Field of Honor</button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="title">THE DUEL</h1>
+            <p class="subtitle">A Matter of Honor — Anno Domini 1776</p>
+        </header>
+
+        <!-- Main Arena -->
+        <main class="arena">
+            <!-- Left Player -->
+            <div class="player-side player-left">
+                <div class="player-stats">
+                    <div class="player-name">Federalist</div>
+                    <div class="stat-row">
+                        <span class="stat-label">Score:</span>
+                        <span class="stat-value" id="leftScore">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Streak:</span>
+                        <span class="stat-value" id="leftStreak">0</span>
+                    </div>
+                    <div class="level-display">
+                        <div class="level-title">Rank</div>
+                        <div class="level-name" id="leftLevel">Gentleman</div>
+                        <div class="level-stars" id="leftStars">★</div>
+                    </div>
+                </div>
+
+                <div class="duelist-area">
+                    <div class="duelist">
+                        <div class="duelist-body">
+                            <!-- SVG Duelist Left -->
+                            <svg viewBox="0 0 200 350" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Boots -->
+                                <ellipse cx="70" cy="340" rx="25" ry="10" fill="#1a1a1a"/>
+                                <ellipse cx="130" cy="340" rx="25" ry="10" fill="#1a1a1a"/>
+                                <rect x="55" y="300" width="30" height="45" fill="#2a2a2a"/>
+                                <rect x="115" y="300" width="30" height="45" fill="#2a2a2a"/>
+
+                                <!-- Breeches -->
+                                <path d="M60 200 L60 305 L90 305 L100 200 Z" fill="#d4c4a0"/>
+                                <path d="M100 200 L110 305 L140 305 L140 200 Z" fill="#d4c4a0"/>
+
+                                <!-- Coat -->
+                                <path d="M40 100 L40 210 L80 220 L100 210 L120 220 L160 210 L160 100 Z" fill="#1e3a5f"/>
+                                <path d="M50 100 L50 200 L70 205 L70 100 Z" fill="#c9a959"/>
+                                <path d="M130 100 L130 205 L150 200 L150 100 Z" fill="#c9a959"/>
+
+                                <!-- Waistcoat -->
+                                <rect x="70" y="100" width="60" height="80" fill="#c9a959"/>
+                                <circle cx="100" cy="120" r="4" fill="#8b6914"/>
+                                <circle cx="100" cy="140" r="4" fill="#8b6914"/>
+                                <circle cx="100" cy="160" r="4" fill="#8b6914"/>
+
+                                <!-- Collar/Cravat -->
+                                <ellipse cx="100" cy="95" rx="25" ry="10" fill="#fff"/>
+
+                                <!-- Head -->
+                                <ellipse cx="100" cy="60" rx="30" ry="35" fill="#e8d0b0"/>
+
+                                <!-- Face -->
+                                <ellipse cx="88" cy="55" rx="4" ry="3" fill="#2a2a2a"/>
+                                <ellipse cx="112" cy="55" rx="4" ry="3" fill="#2a2a2a"/>
+                                <path d="M95 70 Q100 75 105 70" stroke="#8b6914" fill="none" stroke-width="2"/>
+
+                                <!-- Hair/Wig -->
+                                <path d="M70 50 Q70 20 100 15 Q130 20 130 50" fill="#888"/>
+                                <ellipse cx="65" cy="60" rx="8" ry="15" fill="#888"/>
+                                <ellipse cx="135" cy="60" rx="8" ry="15" fill="#888"/>
+
+                                <!-- Arm (right, holding pistol) -->
+                                <g id="leftArm">
+                                    <path d="M155 110 Q180 130 175 160" stroke="#1e3a5f" fill="none" stroke-width="20" stroke-linecap="round"/>
+                                    <ellipse cx="175" cy="165" rx="12" ry="15" fill="#e8d0b0"/>
+                                </g>
+
+                                <!-- Left arm -->
+                                <path d="M45 110 Q20 150 40 180" stroke="#1e3a5f" fill="none" stroke-width="20" stroke-linecap="round"/>
+                                <ellipse cx="40" cy="185" rx="12" ry="15" fill="#e8d0b0"/>
+                            </svg>
+                        </div>
+                        <div class="pistol-container" id="leftPistol">
+                            <!-- SVG Pistol -->
+                            <svg viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Barrel -->
+                                <rect x="50" y="20" width="70" height="12" rx="2" fill="#4a4a4a"/>
+                                <rect x="50" y="22" width="70" height="4" fill="#5a5a5a"/>
+
+                                <!-- Barrel end -->
+                                <ellipse cx="120" cy="26" rx="3" ry="6" fill="#3a3a3a"/>
+
+                                <!-- Lock plate -->
+                                <path d="M30 15 L55 15 L55 40 L30 45 Z" fill="#8b6914"/>
+                                <circle cx="42" cy="28" r="6" fill="#6b4a0a"/>
+
+                                <!-- Hammer -->
+                                <path d="M35 15 L40 5 L45 5 L45 15" fill="#4a4a4a"/>
+
+                                <!-- Grip -->
+                                <path d="M10 25 L35 20 L35 45 L20 55 L5 50 Z" fill="#5a3a20"/>
+                                <path d="M12 28 L32 24 L32 42 L18 50 L8 46 Z" fill="#6b4a30"/>
+
+                                <!-- Trigger guard -->
+                                <path d="M25 40 Q35 55 45 40" stroke="#8b6914" fill="none" stroke-width="3"/>
+
+                                <!-- Trigger -->
+                                <rect x="33" y="42" width="4" height="10" fill="#4a4a4a"/>
+                            </svg>
+                            <div class="smoke-effect" id="leftSmoke"></div>
+                        </div>
+                    </div>
+                    <div class="action-display" id="leftAction"></div>
+                </div>
+
+                <div class="controls-display">
+                    <div><span class="control-key">Q</span><span class="control-label">Fire</span></div>
+                    <div><span class="control-key">A</span><span class="control-label">Reconsider</span></div>
+                </div>
+            </div>
+
+            <!-- Center - Countdown -->
+            <div class="center-area">
+                <div class="countdown-lights" id="countdownLights">
+                    <div class="light-row">
+                        <div class="light" id="light1"></div>
+                        <div class="light" id="light2"></div>
+                    </div>
+                    <div class="light-row">
+                        <div class="light" id="light3"></div>
+                        <div class="light" id="light4"></div>
+                    </div>
+                    <div class="light-row">
+                        <div class="light" id="light5"></div>
+                        <div class="light" id="light6"></div>
+                    </div>
+                    <div class="light-row">
+                        <div class="light green" id="lightGreen1"></div>
+                        <div class="light green" id="lightGreen2"></div>
+                    </div>
+                </div>
+                <div class="message-display" id="messageDisplay" style="display: none;">
+                    <div class="message-text" id="messageText"></div>
+                </div>
+            </div>
+
+            <!-- Right Player -->
+            <div class="player-side player-right">
+                <div class="player-stats">
+                    <div class="player-name">Republican</div>
+                    <div class="stat-row">
+                        <span class="stat-label">Score:</span>
+                        <span class="stat-value" id="rightScore">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Streak:</span>
+                        <span class="stat-value" id="rightStreak">0</span>
+                    </div>
+                    <div class="level-display">
+                        <div class="level-title">Rank</div>
+                        <div class="level-name" id="rightLevel">Gentleman</div>
+                        <div class="level-stars" id="rightStars">★</div>
+                    </div>
+                </div>
+
+                <div class="duelist-area">
+                    <div class="duelist">
+                        <div class="duelist-body">
+                            <!-- SVG Duelist Right (mirrored) -->
+                            <svg viewBox="0 0 200 350" xmlns="http://www.w3.org/2000/svg" style="transform: scaleX(-1);">
+                                <!-- Boots -->
+                                <ellipse cx="70" cy="340" rx="25" ry="10" fill="#1a1a1a"/>
+                                <ellipse cx="130" cy="340" rx="25" ry="10" fill="#1a1a1a"/>
+                                <rect x="55" y="300" width="30" height="45" fill="#2a2a2a"/>
+                                <rect x="115" y="300" width="30" height="45" fill="#2a2a2a"/>
+
+                                <!-- Breeches -->
+                                <path d="M60 200 L60 305 L90 305 L100 200 Z" fill="#d4c4a0"/>
+                                <path d="M100 200 L110 305 L140 305 L140 200 Z" fill="#d4c4a0"/>
+
+                                <!-- Coat - Different color -->
+                                <path d="M40 100 L40 210 L80 220 L100 210 L120 220 L160 210 L160 100 Z" fill="#5a1e1e"/>
+                                <path d="M50 100 L50 200 L70 205 L70 100 Z" fill="#c9a959"/>
+                                <path d="M130 100 L130 205 L150 200 L150 100 Z" fill="#c9a959"/>
+
+                                <!-- Waistcoat -->
+                                <rect x="70" y="100" width="60" height="80" fill="#c9a959"/>
+                                <circle cx="100" cy="120" r="4" fill="#8b6914"/>
+                                <circle cx="100" cy="140" r="4" fill="#8b6914"/>
+                                <circle cx="100" cy="160" r="4" fill="#8b6914"/>
+
+                                <!-- Collar/Cravat -->
+                                <ellipse cx="100" cy="95" rx="25" ry="10" fill="#fff"/>
+
+                                <!-- Head -->
+                                <ellipse cx="100" cy="60" rx="30" ry="35" fill="#e8d0b0"/>
+
+                                <!-- Face -->
+                                <ellipse cx="88" cy="55" rx="4" ry="3" fill="#2a2a2a"/>
+                                <ellipse cx="112" cy="55" rx="4" ry="3" fill="#2a2a2a"/>
+                                <path d="M95 70 Q100 75 105 70" stroke="#8b6914" fill="none" stroke-width="2"/>
+
+                                <!-- Hair/Wig -->
+                                <path d="M70 50 Q70 20 100 15 Q130 20 130 50" fill="#654321"/>
+                                <ellipse cx="65" cy="60" rx="8" ry="15" fill="#654321"/>
+                                <ellipse cx="135" cy="60" rx="8" ry="15" fill="#654321"/>
+
+                                <!-- Arm (right, holding pistol) -->
+                                <g id="rightArm">
+                                    <path d="M155 110 Q180 130 175 160" stroke="#5a1e1e" fill="none" stroke-width="20" stroke-linecap="round"/>
+                                    <ellipse cx="175" cy="165" rx="12" ry="15" fill="#e8d0b0"/>
+                                </g>
+
+                                <!-- Left arm -->
+                                <path d="M45 110 Q20 150 40 180" stroke="#5a1e1e" fill="none" stroke-width="20" stroke-linecap="round"/>
+                                <ellipse cx="40" cy="185" rx="12" ry="15" fill="#e8d0b0"/>
+                            </svg>
+                        </div>
+                        <div class="pistol-container" id="rightPistol">
+                            <!-- SVG Pistol -->
+                            <svg viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="50" y="20" width="70" height="12" rx="2" fill="#4a4a4a"/>
+                                <rect x="50" y="22" width="70" height="4" fill="#5a5a5a"/>
+                                <ellipse cx="120" cy="26" rx="3" ry="6" fill="#3a3a3a"/>
+                                <path d="M30 15 L55 15 L55 40 L30 45 Z" fill="#8b6914"/>
+                                <circle cx="42" cy="28" r="6" fill="#6b4a0a"/>
+                                <path d="M35 15 L40 5 L45 5 L45 15" fill="#4a4a4a"/>
+                                <path d="M10 25 L35 20 L35 45 L20 55 L5 50 Z" fill="#5a3a20"/>
+                                <path d="M12 28 L32 24 L32 42 L18 50 L8 46 Z" fill="#6b4a30"/>
+                                <path d="M25 40 Q35 55 45 40" stroke="#8b6914" fill="none" stroke-width="3"/>
+                                <rect x="33" y="42" width="4" height="10" fill="#4a4a4a"/>
+                            </svg>
+                            <div class="smoke-effect" id="rightSmoke"></div>
+                        </div>
+                    </div>
+                    <div class="action-display" id="rightAction"></div>
+                </div>
+
+                <div class="controls-display">
+                    <div><span class="control-key">L</span><span class="control-label">Fire</span></div>
+                    <div><span class="control-key">P</span><span class="control-label">Reconsider</span></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <button class="start-btn" id="startBtn" onclick="startDuel()">Begin Duel</button>
+            <button class="reset-btn" onclick="resetGame()">Reset All</button>
+        </footer>
+    </div>
+
+    <script>
+        // Game State
+        const LEVELS = [
+            { name: 'Scoundrel', stars: 0 },
+            { name: 'Gentleman', stars: 1 },
+            { name: 'Esquire', stars: 2 },
+            { name: 'Captain', stars: 3 },
+            { name: 'Colonel', stars: 4 },
+            { name: 'General', stars: 5 },
+            { name: 'Founding Father', stars: 6 }
+        ];
+
+        let gameState = {
+            left: { score: 0, streak: 0, level: 1 },
+            right: { score: 0, streak: 0, level: 1 },
+            inProgress: false,
+            countdownPhase: 0,
+            greenLight: false,
+            leftAction: null,  // 'shoot', 'reconsider', or null
+            rightAction: null,
+            leftActionTime: null,
+            rightActionTime: null,
+            roundResolved: false
+        };
+
+        // Load from localStorage
+        function loadGame() {
+            const saved = localStorage.getItem('duelGame');
+            if (saved) {
+                const data = JSON.parse(saved);
+                gameState.left = data.left || { score: 0, streak: 0, level: 1 };
+                gameState.right = data.right || { score: 0, streak: 0, level: 1 };
+            }
+            updateDisplay();
+        }
+
+        // Save to localStorage
+        function saveGame() {
+            localStorage.setItem('duelGame', JSON.stringify({
+                left: gameState.left,
+                right: gameState.right
+            }));
+        }
+
+        // Update display
+        function updateDisplay() {
+            document.getElementById('leftScore').textContent = gameState.left.score;
+            document.getElementById('leftStreak').textContent = gameState.left.streak;
+            document.getElementById('rightScore').textContent = gameState.right.score;
+            document.getElementById('rightStreak').textContent = gameState.right.streak;
+
+            const leftLevel = LEVELS[Math.max(0, Math.min(gameState.left.level, LEVELS.length - 1))];
+            const rightLevel = LEVELS[Math.max(0, Math.min(gameState.right.level, LEVELS.length - 1))];
+
+            document.getElementById('leftLevel').textContent = leftLevel.name;
+            document.getElementById('leftStars').textContent = '★'.repeat(leftLevel.stars) || '☆';
+            document.getElementById('rightLevel').textContent = rightLevel.name;
+            document.getElementById('rightStars').textContent = '★'.repeat(rightLevel.stars) || '☆';
+        }
+
+        // Reset all lights
+        function resetLights() {
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById('light' + i).classList.remove('red-on');
+            }
+            document.getElementById('lightGreen1').classList.remove('green-on');
+            document.getElementById('lightGreen2').classList.remove('green-on');
+        }
+
+        // Reset round state
+        function resetRound() {
+            gameState.leftAction = null;
+            gameState.rightAction = null;
+            gameState.leftActionTime = null;
+            gameState.rightActionTime = null;
+            gameState.greenLight = false;
+            gameState.countdownPhase = 0;
+            gameState.roundResolved = false;
+
+            // Reset visual states
+            const leftPistol = document.getElementById('leftPistol');
+            const rightPistol = document.getElementById('rightPistol');
+            leftPistol.classList.remove('firing-left', 'raised-left');
+            rightPistol.classList.remove('firing-right', 'raised-right');
+            leftPistol.style.transform = '';
+            rightPistol.style.transform = '';
+
+            document.getElementById('leftSmoke').classList.remove('active');
+            document.getElementById('rightSmoke').classList.remove('active');
+
+            const leftAction = document.getElementById('leftAction');
+            const rightAction = document.getElementById('rightAction');
+            leftAction.classList.remove('visible', 'shot', 'reconsidered', 'early');
+            rightAction.classList.remove('visible', 'shot', 'reconsidered', 'early');
+            leftAction.textContent = '';
+            rightAction.textContent = '';
+
+            document.getElementById('messageDisplay').style.display = 'none';
+            resetLights();
+        }
+
+        // Start duel
+        async function startDuel() {
+            if (gameState.inProgress) return;
+
+            resetRound();
+            gameState.inProgress = true;
+            document.getElementById('startBtn').disabled = true;
+
+            // Random timing for each light (F1 style)
+            const baseTiming = 800;
+            const variance = 400;
+
+            // Light up red lights one by one
+            for (let i = 1; i <= 6; i += 2) {
+                await sleep(baseTiming + Math.random() * variance);
+                if (!gameState.inProgress) return;
+                document.getElementById('light' + i).classList.add('red-on');
+                document.getElementById('light' + (i + 1)).classList.add('red-on');
+                gameState.countdownPhase = Math.ceil(i / 2);
+            }
+
+            // Random delay before green (1-3 seconds additional)
+            await sleep(1000 + Math.random() * 2000);
+            if (!gameState.inProgress) return;
+
+            // Green light!
+            gameState.greenLight = true;
+            resetLights();
+            document.getElementById('lightGreen1').classList.add('green-on');
+            document.getElementById('lightGreen2').classList.add('green-on');
+
+            // Check for pre-green actions and resolve
+            setTimeout(() => resolveRound(), 100);
+        }
+
+        // Handle player actions
+        function handleAction(player, action) {
+            if (!gameState.inProgress || gameState.roundResolved) return;
+
+            const actionKey = player + 'Action';
+            const timeKey = player + 'ActionTime';
+
+            // Only record first action
+            if (gameState[actionKey] !== null) return;
+
+            gameState[actionKey] = action;
+            gameState[timeKey] = Date.now();
+
+            // Visual feedback for shooting (immediate)
+            if (action === 'shoot') {
+                const pistol = document.getElementById(player + 'Pistol');
+                const smoke = document.getElementById(player + 'Smoke');
+                pistol.classList.add('firing-' + player);
+                smoke.classList.add('active');
+
+                // Show action if after green, or show "TOO EARLY" if before
+                if (gameState.greenLight) {
+                    showAction(player, 'FIRE!', 'shot');
+                } else {
+                    showAction(player, 'TOO EARLY!', 'early');
+                }
+            }
+
+            // If both players have acted after green, resolve immediately
+            if (gameState.greenLight && gameState.leftAction && gameState.rightAction) {
+                resolveRound();
+            }
+        }
+
+        function showAction(player, text, className) {
+            const actionEl = document.getElementById(player + 'Action');
+            actionEl.textContent = text;
+            actionEl.classList.remove('shot', 'reconsidered', 'early');
+            actionEl.classList.add('visible', className);
+        }
+
+        // Resolve the round
+        function resolveRound() {
+            if (gameState.roundResolved || !gameState.greenLight) return;
+            gameState.roundResolved = true;
+
+            const leftAction = gameState.leftAction;
+            const rightAction = gameState.rightAction;
+            const leftTime = gameState.leftActionTime;
+            const rightTime = gameState.rightActionTime;
+
+            // Determine if shots were early (before green light)
+            // We'll use a simple heuristic: if action was recorded and greenLight wasn't set yet
+            // Actually, we track this by checking if the action was set before greenLight became true
+            // For simplicity, we'll check if the action display shows "TOO EARLY"
+            const leftEarly = leftAction === 'shoot' && document.getElementById('leftAction').classList.contains('early');
+            const rightEarly = rightAction === 'shoot' && document.getElementById('rightAction').classList.contains('early');
+
+            // Show reconsider animations for those who chose it
+            if (leftAction === 'reconsider') {
+                const pistol = document.getElementById('leftPistol');
+                pistol.classList.add('raised-left');
+                showAction('left', 'MERCY!', 'reconsidered');
+            }
+            if (rightAction === 'reconsider') {
+                const pistol = document.getElementById('rightPistol');
+                pistol.classList.add('raised-right');
+                showAction('right', 'MERCY!', 'reconsidered');
+            }
+
+            // Determine outcome
+            let result = determineWinner(leftAction, rightAction, leftTime, rightTime, leftEarly, rightEarly);
+
+            // Apply result after a short delay
+            setTimeout(() => {
+                applyResult(result);
+                gameState.inProgress = false;
+                document.getElementById('startBtn').disabled = false;
+            }, 1000);
+        }
+
+        function determineWinner(leftAction, rightAction, leftTime, rightTime, leftEarly, rightEarly) {
+            // Both reconsider
+            if (leftAction === 'reconsider' && rightAction === 'reconsider') {
+                return { type: 'both_reconsider' };
+            }
+
+            // One reconsiders, other shoots
+            if (leftAction === 'reconsider' && rightAction === 'shoot') {
+                if (rightEarly) {
+                    return { type: 'left_survives_early', winner: 'left' };
+                }
+                return { type: 'shot_merciful', winner: 'right', loser: 'left' };
+            }
+            if (rightAction === 'reconsider' && leftAction === 'shoot') {
+                if (leftEarly) {
+                    return { type: 'right_survives_early', winner: 'right' };
+                }
+                return { type: 'shot_merciful', winner: 'left', loser: 'right' };
+            }
+
+            // Both shoot
+            if (leftAction === 'shoot' && rightAction === 'shoot') {
+                if (leftEarly && rightEarly) {
+                    return { type: 'both_early' };
+                }
+                if (leftEarly) {
+                    return { type: 'winner', winner: 'right' };
+                }
+                if (rightEarly) {
+                    return { type: 'winner', winner: 'left' };
+                }
+                // Both shot after green - faster wins
+                if (leftTime < rightTime) {
+                    return { type: 'winner', winner: 'left' };
+                } else if (rightTime < leftTime) {
+                    return { type: 'winner', winner: 'right' };
+                } else {
+                    return { type: 'draw' };
+                }
+            }
+
+            // Only one shot (other did nothing)
+            if (leftAction === 'shoot' && !rightAction) {
+                if (leftEarly) {
+                    return { type: 'early_miss', shooter: 'left' };
+                }
+                return { type: 'winner', winner: 'left' };
+            }
+            if (rightAction === 'shoot' && !leftAction) {
+                if (rightEarly) {
+                    return { type: 'early_miss', shooter: 'right' };
+                }
+                return { type: 'winner', winner: 'right' };
+            }
+
+            // One reconsiders, other does nothing
+            if (leftAction === 'reconsider' && !rightAction) {
+                return { type: 'standoff', merciful: 'left' };
+            }
+            if (rightAction === 'reconsider' && !leftAction) {
+                return { type: 'standoff', merciful: 'right' };
+            }
+
+            // Neither did anything
+            return { type: 'standoff' };
+        }
+
+        function applyResult(result) {
+            const msgDisplay = document.getElementById('messageDisplay');
+            const msgText = document.getElementById('messageText');
+            msgDisplay.style.display = 'block';
+
+            switch (result.type) {
+                case 'winner':
+                    msgText.textContent = (result.winner === 'left' ? 'FEDERALIST' : 'REPUBLICAN') + ' WINS!';
+                    msgText.className = 'message-text winner';
+                    addWin(result.winner);
+                    addLoss(result.winner === 'left' ? 'right' : 'left');
+                    break;
+
+                case 'both_reconsider':
+                    msgText.textContent = 'HONOR PREVAILS!';
+                    msgText.className = 'message-text honor';
+                    levelUp('left');
+                    levelUp('right');
+                    gameState.left.streak = 0;
+                    gameState.right.streak = 0;
+                    break;
+
+                case 'shot_merciful':
+                    msgText.textContent = (result.winner === 'left' ? 'FEDERALIST' : 'REPUBLICAN') + ' WINS... WITHOUT HONOR';
+                    msgText.className = 'message-text winner';
+                    addWin(result.winner);
+                    levelDown(result.winner); // Winner loses honor for shooting merciful opponent
+                    addLoss(result.loser);
+                    break;
+
+                case 'both_early':
+                    msgText.textContent = 'BOTH FIRED EARLY! DRAW!';
+                    msgText.className = 'message-text draw';
+                    gameState.left.streak = 0;
+                    gameState.right.streak = 0;
+                    break;
+
+                case 'draw':
+                    msgText.textContent = 'A DRAW!';
+                    msgText.className = 'message-text draw';
+                    gameState.left.streak = 0;
+                    gameState.right.streak = 0;
+                    break;
+
+                case 'early_miss':
+                    msgText.textContent = (result.shooter === 'left' ? 'FEDERALIST' : 'REPUBLICAN') + ' FIRED EARLY! MISS!';
+                    msgText.className = 'message-text early';
+                    break;
+
+                case 'left_survives_early':
+                case 'right_survives_early':
+                    msgText.textContent = (result.winner === 'left' ? 'FEDERALIST' : 'REPUBLICAN') + ' SURVIVES! OPPONENT MISSED!';
+                    msgText.className = 'message-text winner';
+                    break;
+
+                case 'standoff':
+                    msgText.textContent = 'STANDOFF... NO SHOTS FIRED';
+                    msgText.className = 'message-text draw';
+                    break;
+            }
+
+            updateDisplay();
+            saveGame();
+        }
+
+        function addWin(player) {
+            gameState[player].score += 100;
+            gameState[player].streak += 1;
+
+            // Check for streak level up
+            if (gameState[player].streak >= 3) {
+                levelUp(player);
+                gameState[player].streak = 0;
+            }
+        }
+
+        function addLoss(player) {
+            gameState[player].streak = 0;
+        }
+
+        function levelUp(player) {
+            if (gameState[player].level < LEVELS.length - 1) {
+                gameState[player].level += 1;
+                gameState[player].score += 50;
+            }
+        }
+
+        function levelDown(player) {
+            if (gameState[player].level > 0) {
+                gameState[player].level -= 1;
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function resetGame() {
+            if (confirm('Reset all scores and progress?')) {
+                gameState = {
+                    left: { score: 0, streak: 0, level: 1 },
+                    right: { score: 0, streak: 0, level: 1 },
+                    inProgress: false,
+                    countdownPhase: 0,
+                    greenLight: false,
+                    leftAction: null,
+                    rightAction: null,
+                    leftActionTime: null,
+                    rightActionTime: null,
+                    roundResolved: false
+                };
+                resetRound();
+                updateDisplay();
+                saveGame();
+            }
+        }
+
+        function closeInstructions() {
+            document.getElementById('instructionsOverlay').classList.add('hidden');
+            localStorage.setItem('duelInstructionsSeen', 'true');
+        }
+
+        // Keyboard handling
+        document.addEventListener('keydown', (e) => {
+            if (!gameState.inProgress) return;
+
+            const key = e.key.toLowerCase();
+
+            switch (key) {
+                case 'q':
+                    handleAction('left', 'shoot');
+                    break;
+                case 'a':
+                    handleAction('left', 'reconsider');
+                    break;
+                case 'l':
+                    handleAction('right', 'shoot');
+                    break;
+                case 'p':
+                    handleAction('right', 'reconsider');
+                    break;
+            }
+        });
+
+        // Initialize
+        window.onload = function() {
+            loadGame();
+
+            // Show instructions if first time
+            if (!localStorage.getItem('duelInstructionsSeen')) {
+                document.getElementById('instructionsOverlay').classList.remove('hidden');
+            } else {
+                document.getElementById('instructionsOverlay').classList.add('hidden');
+            }
+        };
+    </script>
+</body>
+</html>
