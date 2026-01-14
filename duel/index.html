@@ -77,33 +77,13 @@
         }
 
         @keyframes gun-fall-left {
-            0% {
-                transform: rotate(-10deg);
-                opacity: 1;
-            }
-            40% {
-                transform: rotate(60deg) translateY(80px) translateX(-40px);
-                opacity: 1;
-            }
-            100% {
-                transform: rotate(95deg) translateY(180px) translateX(-60px);
-                opacity: 0.8;
-            }
+            0% { transform: rotate(-10deg) translateY(0); }
+            100% { transform: rotate(-10deg) translateY(200px); opacity: 0.5; }
         }
 
         @keyframes gun-fall-right {
-            0% {
-                transform: rotate(10deg) scaleX(-1);
-                opacity: 1;
-            }
-            40% {
-                transform: rotate(-60deg) scaleX(-1) translateY(80px) translateX(40px);
-                opacity: 1;
-            }
-            100% {
-                transform: rotate(-95deg) scaleX(-1) translateY(180px) translateX(60px);
-                opacity: 0.8;
-            }
+            0% { transform: rotate(10deg) scaleX(-1) translateY(0); }
+            100% { transform: rotate(10deg) scaleX(-1) translateY(200px); opacity: 0.5; }
         }
 
         body {
