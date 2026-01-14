@@ -33,25 +33,25 @@
         }
 
         @keyframes recoil-left {
-            0% { transform: rotate(-45deg) translateX(0); }
-            20% { transform: rotate(-30deg) translateX(-10px); }
-            100% { transform: rotate(-45deg) translateX(0); }
+            0% { transform: rotate(-10deg); }
+            30% { transform: rotate(-25deg) translateX(-8px); }
+            100% { transform: rotate(-10deg); }
         }
 
         @keyframes recoil-right {
-            0% { transform: rotate(45deg) scaleX(-1) translateX(0); }
-            20% { transform: rotate(30deg) scaleX(-1) translateX(-10px); }
-            100% { transform: rotate(45deg) scaleX(-1) translateX(0); }
+            0% { transform: rotate(10deg) scaleX(-1); }
+            30% { transform: rotate(25deg) scaleX(-1) translateX(8px); }
+            100% { transform: rotate(10deg) scaleX(-1); }
         }
 
         @keyframes raise-left {
-            0% { transform: rotate(-45deg); }
-            100% { transform: rotate(-120deg); }
+            0% { transform: rotate(-10deg); }
+            100% { transform: rotate(-90deg) translateY(-20px); }
         }
 
         @keyframes raise-right {
-            0% { transform: rotate(45deg) scaleX(-1); }
-            100% { transform: rotate(120deg) scaleX(-1); }
+            0% { transform: rotate(10deg) scaleX(-1); }
+            100% { transform: rotate(90deg) scaleX(-1) translateY(-20px); }
         }
 
         @keyframes celebrate {
@@ -74,6 +74,18 @@
         @keyframes defeat-fall-right {
             0% { transform: scaleX(-1) rotate(0deg) translateY(0); }
             100% { transform: scaleX(-1) rotate(-85deg) translateY(30px) translateX(-40px); transform-origin: bottom center; }
+        }
+
+        @keyframes gun-fall-left {
+            0% { transform: rotate(-10deg); opacity: 1; }
+            50% { transform: rotate(45deg) translateY(50px) translateX(30px); opacity: 1; }
+            100% { transform: rotate(90deg) translateY(120px) translateX(20px); opacity: 0.7; }
+        }
+
+        @keyframes gun-fall-right {
+            0% { transform: rotate(10deg) scaleX(-1); opacity: 1; }
+            50% { transform: rotate(-45deg) scaleX(-1) translateY(50px) translateX(-30px); opacity: 1; }
+            100% { transform: rotate(-90deg) scaleX(-1) translateY(120px) translateX(-20px); opacity: 0.7; }
         }
 
         body {
@@ -293,31 +305,33 @@
 
         .pistol-container {
             position: absolute;
-            width: 120px;
-            height: 60px;
+            width: 100px;
+            height: 50px;
             transition: transform 0.3s ease;
         }
 
+        /* Left player - gun held at right side, pointing right toward opponent */
         .player-left .pistol-container {
-            right: -20px;
-            top: 100px;
-            transform: rotate(-45deg);
+            right: -60px;
+            top: 85px;
+            transform: rotate(-10deg);
             transform-origin: left center;
         }
 
+        /* Right player - gun held at left side, pointing left toward opponent */
         .player-right .pistol-container {
-            left: -20px;
-            top: 100px;
-            transform: rotate(45deg) scaleX(-1);
+            left: -60px;
+            top: 85px;
+            transform: rotate(10deg) scaleX(-1);
             transform-origin: right center;
         }
 
         .pistol-container.firing-left {
-            animation: recoil-left 0.3s ease-out;
+            animation: recoil-left 0.15s ease-out;
         }
 
         .pistol-container.firing-right {
-            animation: recoil-right 0.3s ease-out;
+            animation: recoil-right 0.15s ease-out;
         }
 
         .pistol-container.raised-left {
@@ -326,6 +340,15 @@
 
         .pistol-container.raised-right {
             animation: raise-right 0.5s ease-out forwards;
+        }
+
+        /* Gun falls when player is defeated */
+        .duelist.defeated .pistol-container {
+            animation: gun-fall-left 0.8s ease-in forwards;
+        }
+
+        .player-right .duelist.defeated .pistol-container {
+            animation: gun-fall-right 0.8s ease-in forwards;
         }
 
         .smoke-effect {
@@ -343,13 +366,13 @@
         }
 
         .player-left .smoke-effect {
-            right: -60px;
-            top: 80px;
+            right: -100px;
+            top: 70px;
         }
 
         .player-right .smoke-effect {
-            left: -60px;
-            top: 80px;
+            left: -100px;
+            top: 70px;
         }
 
         /* Controls Display */
@@ -784,14 +807,20 @@
             align-items: center;
             gap: 15px;
             z-index: 10;
+            background: rgba(0,0,0,0.5);
+            padding: 15px 10px;
+            border-radius: 10px;
+            border: 2px solid rgba(139,105,20,0.5);
         }
 
         .player-left .stats-display {
-            left: 20px;
+            left: 10px;
+            right: auto;
         }
 
         .player-right .stats-display {
-            right: 20px;
+            right: 10px;
+            left: auto;
         }
 
         .shots-remaining {
@@ -1349,7 +1378,7 @@
             <button class="start-btn" id="startBtn" onclick="toggleDuel()">Begin Duel</button>
             <button class="settings-btn" onclick="openSettings()">Settings</button>
             <button class="reset-btn" onclick="resetGame()">Reset All</button>
-            <div class="version">v1.5.0</div>
+            <div class="version">v1.6.0</div>
         </footer>
     </div>
 
