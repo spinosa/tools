@@ -60,6 +60,7 @@
             min-height: 100vh;
             color: #f4e4bc;
             overflow: hidden;
+            outline: none;
         }
 
         .game-container {
@@ -470,6 +471,13 @@
             background: linear-gradient(to bottom, #6a4030, #4a2820);
         }
 
+        .version {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #8b6914;
+            opacity: 0.7;
+        }
+
         /* Instructions Modal */
         .instructions-overlay {
             position: fixed;
@@ -565,7 +573,7 @@
         }
     </style>
 </head>
-<body>
+<body tabindex="0">
     <!-- Instructions Overlay -->
     <div class="instructions-overlay" id="instructionsOverlay">
         <div class="instructions-box">
@@ -848,8 +856,9 @@
 
         <!-- Footer -->
         <footer class="footer">
-            <button class="start-btn" id="startBtn" onclick="startDuel()">Begin Duel</button>
+            <button class="start-btn" id="startBtn" onclick="toggleDuel()">Begin Duel</button>
             <button class="reset-btn" onclick="resetGame()">Reset All</button>
+            <div class="version">v1.1.0</div>
         </footer>
     </div>
 
@@ -869,13 +878,15 @@
             left: { score: 0, streak: 0, level: 1 },
             right: { score: 0, streak: 0, level: 1 },
             inProgress: false,
+            isRunning: false,  // continuous mode - are we actively dueling?
             countdownPhase: 0,
             greenLight: false,
             leftAction: null,  // 'shoot', 'reconsider', or null
             rightAction: null,
             leftActionTime: null,
             rightActionTime: null,
-            roundResolved: false
+            roundResolved: false,
+            nextRoundTimeout: null
         };
 
         // Load from localStorage
@@ -954,13 +965,43 @@
             resetLights();
         }
 
+        // Toggle continuous dueling mode
+        function toggleDuel() {
+            if (gameState.isRunning) {
+                // Pause
+                gameState.isRunning = false;
+                if (gameState.nextRoundTimeout) {
+                    clearTimeout(gameState.nextRoundTimeout);
+                    gameState.nextRoundTimeout = null;
+                }
+                updateButtonState();
+            } else {
+                // Start
+                gameState.isRunning = true;
+                updateButtonState();
+                startDuel();
+            }
+            // Keep focus on document for keyboard input
+            document.body.focus();
+        }
+
+        function updateButtonState() {
+            const btn = document.getElementById('startBtn');
+            if (gameState.isRunning) {
+                btn.textContent = 'Pause';
+                btn.style.background = 'linear-gradient(to bottom, #8b4914, #6b2a0a)';
+            } else {
+                btn.textContent = 'Begin Duel';
+                btn.style.background = '';
+            }
+        }
+
         // Start duel
         async function startDuel() {
-            if (gameState.inProgress) return;
+            if (gameState.inProgress || !gameState.isRunning) return;
 
             resetRound();
             gameState.inProgress = true;
-            document.getElementById('startBtn').disabled = true;
 
             // Random timing for each light (F1 style)
             const baseTiming = 800;
@@ -969,7 +1010,7 @@
             // Light up red lights one by one
             for (let i = 1; i <= 6; i += 2) {
                 await sleep(baseTiming + Math.random() * variance);
-                if (!gameState.inProgress) return;
+                if (!gameState.inProgress || !gameState.isRunning) return;
                 document.getElementById('light' + i).classList.add('red-on');
                 document.getElementById('light' + (i + 1)).classList.add('red-on');
                 gameState.countdownPhase = Math.ceil(i / 2);
@@ -977,7 +1018,7 @@
 
             // Random delay before green (1-3 seconds additional)
             await sleep(1000 + Math.random() * 2000);
-            if (!gameState.inProgress) return;
+            if (!gameState.inProgress || !gameState.isRunning) return;
 
             // Green light!
             gameState.greenLight = true;
@@ -1066,7 +1107,15 @@
             setTimeout(() => {
                 applyResult(result);
                 gameState.inProgress = false;
-                document.getElementById('startBtn').disabled = false;
+
+                // Auto-start next round if still running
+                if (gameState.isRunning) {
+                    gameState.nextRoundTimeout = setTimeout(() => {
+                        if (gameState.isRunning) {
+                            startDuel();
+                        }
+                    }, 2500); // Wait 2.5 seconds before next round
+                }
             }, 1000);
         }
 
@@ -1236,20 +1285,27 @@
 
         function resetGame() {
             if (confirm('Reset all scores and progress?')) {
+                // Stop any ongoing game
+                if (gameState.nextRoundTimeout) {
+                    clearTimeout(gameState.nextRoundTimeout);
+                }
                 gameState = {
                     left: { score: 0, streak: 0, level: 1 },
                     right: { score: 0, streak: 0, level: 1 },
                     inProgress: false,
+                    isRunning: false,
                     countdownPhase: 0,
                     greenLight: false,
                     leftAction: null,
                     rightAction: null,
                     leftActionTime: null,
                     rightActionTime: null,
-                    roundResolved: false
+                    roundResolved: false,
+                    nextRoundTimeout: null
                 };
                 resetRound();
                 updateDisplay();
+                updateButtonState();
                 saveGame();
             }
         }
@@ -1261,21 +1317,32 @@
 
         // Keyboard handling
         document.addEventListener('keydown', (e) => {
-            if (!gameState.inProgress) return;
-
             const key = e.key.toLowerCase();
+
+            // Allow spacebar to toggle duel even when not in progress
+            if (key === ' ' || key === 'spacebar') {
+                e.preventDefault();
+                toggleDuel();
+                return;
+            }
+
+            if (!gameState.inProgress) return;
 
             switch (key) {
                 case 'q':
+                    e.preventDefault();
                     handleAction('left', 'shoot');
                     break;
                 case 'a':
+                    e.preventDefault();
                     handleAction('left', 'reconsider');
                     break;
                 case 'l':
+                    e.preventDefault();
                     handleAction('right', 'shoot');
                     break;
                 case 'p':
+                    e.preventDefault();
                     handleAction('right', 'reconsider');
                     break;
             }
@@ -1291,7 +1358,17 @@
             } else {
                 document.getElementById('instructionsOverlay').classList.add('hidden');
             }
+
+            // Ensure body can receive keyboard events
+            document.body.focus();
         };
+
+        // Keep focus on body when clicking buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                setTimeout(() => document.body.focus(), 10);
+            }
+        });
     </script>
 </body>
 </html>
