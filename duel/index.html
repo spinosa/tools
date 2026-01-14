@@ -77,15 +77,33 @@
         }
 
         @keyframes gun-fall-left {
-            0% { transform: rotate(-10deg); opacity: 1; }
-            50% { transform: rotate(45deg) translateY(50px) translateX(30px); opacity: 1; }
-            100% { transform: rotate(90deg) translateY(120px) translateX(20px); opacity: 0.7; }
+            0% {
+                transform: rotate(-10deg);
+                opacity: 1;
+            }
+            40% {
+                transform: rotate(60deg) translateY(80px) translateX(-40px);
+                opacity: 1;
+            }
+            100% {
+                transform: rotate(95deg) translateY(180px) translateX(-60px);
+                opacity: 0.8;
+            }
         }
 
         @keyframes gun-fall-right {
-            0% { transform: rotate(10deg) scaleX(-1); opacity: 1; }
-            50% { transform: rotate(-45deg) scaleX(-1) translateY(50px) translateX(-30px); opacity: 1; }
-            100% { transform: rotate(-90deg) scaleX(-1) translateY(120px) translateX(-20px); opacity: 0.7; }
+            0% {
+                transform: rotate(10deg) scaleX(-1);
+                opacity: 1;
+            }
+            40% {
+                transform: rotate(-60deg) scaleX(-1) translateY(80px) translateX(40px);
+                opacity: 1;
+            }
+            100% {
+                transform: rotate(-95deg) scaleX(-1) translateY(180px) translateX(60px);
+                opacity: 0.8;
+            }
         }
 
         body {
@@ -1220,15 +1238,16 @@
                         </div>
                     </div>
                     <div class="action-display" id="leftAction"></div>
-                    <div class="stats-display hidden" id="leftStats">
-                        <div class="shots-remaining">
-                            <div class="shots-number" id="leftShotsNumber">6</div>
-                            <div class="shots-dots" id="leftShotsDots"></div>
-                        </div>
-                        <div class="accuracy-display hidden" id="leftAccuracy">
-                            <div class="accuracy-label">Accuracy</div>
-                            <div class="accuracy-percent" id="leftAccuracyPercent">30%</div>
-                        </div>
+                </div>
+
+                <div class="stats-display hidden" id="leftStats">
+                    <div class="shots-remaining">
+                        <div class="shots-number" id="leftShotsNumber">6</div>
+                        <div class="shots-dots" id="leftShotsDots"></div>
+                    </div>
+                    <div class="accuracy-display hidden" id="leftAccuracy">
+                        <div class="accuracy-label">Accuracy</div>
+                        <div class="accuracy-percent" id="leftAccuracyPercent">30%</div>
                     </div>
                 </div>
 
@@ -1354,15 +1373,16 @@
                         </div>
                     </div>
                     <div class="action-display" id="rightAction"></div>
-                    <div class="stats-display hidden" id="rightStats">
-                        <div class="shots-remaining">
-                            <div class="shots-number" id="rightShotsNumber">6</div>
-                            <div class="shots-dots" id="rightShotsDots"></div>
-                        </div>
-                        <div class="accuracy-display hidden" id="rightAccuracy">
-                            <div class="accuracy-label">Accuracy</div>
-                            <div class="accuracy-percent" id="rightAccuracyPercent">30%</div>
-                        </div>
+                </div>
+
+                <div class="stats-display hidden" id="rightStats">
+                    <div class="shots-remaining">
+                        <div class="shots-number" id="rightShotsNumber">6</div>
+                        <div class="shots-dots" id="rightShotsDots"></div>
+                    </div>
+                    <div class="accuracy-display hidden" id="rightAccuracy">
+                        <div class="accuracy-label">Accuracy</div>
+                        <div class="accuracy-percent" id="rightAccuracyPercent">30%</div>
                     </div>
                 </div>
 
@@ -1378,7 +1398,7 @@
             <button class="start-btn" id="startBtn" onclick="toggleDuel()">Begin Duel</button>
             <button class="settings-btn" onclick="openSettings()">Settings</button>
             <button class="reset-btn" onclick="resetGame()">Reset All</button>
-            <div class="version">v1.6.0</div>
+            <div class="version">v1.6.1</div>
         </footer>
     </div>
 
