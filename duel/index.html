@@ -774,41 +774,122 @@
             background: linear-gradient(to bottom, #4a3020, #3a2010);
         }
 
-        /* Shot indicator */
-        .shots-display {
+        /* Stats display - shots and accuracy on outside of character */
+        .stats-display {
             position: absolute;
-            bottom: 200px;
-            font-size: 1.2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .player-left .stats-display {
+            left: 20px;
+        }
+
+        .player-right .stats-display {
+            right: 20px;
+        }
+
+        .shots-remaining {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .shots-number {
+            font-size: 3rem;
+            font-weight: bold;
             color: #c9a959;
-            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            line-height: 1;
         }
 
-        .player-left .shots-display {
-            left: 50%;
-            transform: translateX(-50%);
+        .player-left .shots-number {
+            color: #6ab7ff;
         }
 
-        .player-right .shots-display {
-            right: 50%;
-            transform: translateX(50%);
+        .player-right .shots-number {
+            color: #ff6b6b;
         }
 
-        .shots-display .shot-dot {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
+        .shots-dots {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            max-width: 80px;
+        }
+
+        .shots-dots .shot-dot {
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            background: #8b6914;
-            margin: 0 3px;
-            transition: background 0.2s ease;
+            background: #c9a959;
+            box-shadow: 0 0 8px rgba(201, 169, 89, 0.5);
+            transition: all 0.2s ease;
         }
 
-        .shots-display .shot-dot.used {
-            background: #3a2010;
+        .player-left .shots-dots .shot-dot {
+            background: #6ab7ff;
+            box-shadow: 0 0 8px rgba(106, 183, 255, 0.5);
         }
 
-        .shots-display .shot-dot.hit {
-            background: #4a9;
+        .player-right .shots-dots .shot-dot {
+            background: #ff6b6b;
+            box-shadow: 0 0 8px rgba(255, 107, 107, 0.5);
+        }
+
+        .shots-dots .shot-dot.used {
+            background: #3a3a3a;
+            box-shadow: none;
+            opacity: 0.4;
+        }
+
+        .accuracy-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .accuracy-display.hidden {
+            display: none;
+        }
+
+        .accuracy-label {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .accuracy-percent {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #4a9;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            line-height: 1;
+        }
+
+        .accuracy-percent.low {
+            color: #c44;
+        }
+
+        .accuracy-percent.medium {
+            color: #ca4;
+        }
+
+        .accuracy-percent.high {
+            color: #4a9;
+        }
+
+        .stats-display.hidden {
+            display: none;
         }
 
         /* Instructions Modal */
@@ -1110,7 +1191,16 @@
                         </div>
                     </div>
                     <div class="action-display" id="leftAction"></div>
-                    <div class="shots-display" id="leftShots"></div>
+                    <div class="stats-display hidden" id="leftStats">
+                        <div class="shots-remaining">
+                            <div class="shots-number" id="leftShotsNumber">6</div>
+                            <div class="shots-dots" id="leftShotsDots"></div>
+                        </div>
+                        <div class="accuracy-display hidden" id="leftAccuracy">
+                            <div class="accuracy-label">Accuracy</div>
+                            <div class="accuracy-percent" id="leftAccuracyPercent">30%</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="controls-display">
@@ -1235,7 +1325,16 @@
                         </div>
                     </div>
                     <div class="action-display" id="rightAction"></div>
-                    <div class="shots-display" id="rightShots"></div>
+                    <div class="stats-display hidden" id="rightStats">
+                        <div class="shots-remaining">
+                            <div class="shots-number" id="rightShotsNumber">6</div>
+                            <div class="shots-dots" id="rightShotsDots"></div>
+                        </div>
+                        <div class="accuracy-display hidden" id="rightAccuracy">
+                            <div class="accuracy-label">Accuracy</div>
+                            <div class="accuracy-percent" id="rightAccuracyPercent">30%</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="controls-display">
@@ -1250,7 +1349,7 @@
             <button class="start-btn" id="startBtn" onclick="toggleDuel()">Begin Duel</button>
             <button class="settings-btn" onclick="openSettings()">Settings</button>
             <button class="reset-btn" onclick="resetGame()">Reset All</button>
-            <div class="version">v1.4.0</div>
+            <div class="version">v1.5.0</div>
         </footer>
     </div>
 
@@ -1461,39 +1560,105 @@
             }
         }
 
+        // Accuracy update interval
+        let accuracyUpdateInterval = null;
+
         // Calculate hit chance with aim bonus
         function calculateHitChance(player) {
             let chance = settings.hitChance;
 
             if (settings.aimBonus && gameState.greenLightTime) {
-                const lastShotTime = gameState[player + 'LastShotTime'] || gameState.greenLightTime;
-                const timeSinceLastShot = Date.now() - lastShotTime;
-                const bonusIntervals = Math.floor(timeSinceLastShot / 500); // +5% per 0.5s
+                const timeSinceGreen = Date.now() - gameState.greenLightTime;
+                const bonusIntervals = Math.floor(timeSinceGreen / 100); // +5% per 0.1s
                 chance += bonusIntervals * 5;
             }
 
             return Math.min(100, chance);
         }
 
-        // Update shots display
-        function updateShotsDisplay() {
+        // Update stats display (shots and accuracy)
+        function updateStatsDisplay() {
             ['left', 'right'].forEach(player => {
-                const el = document.getElementById(player + 'Shots');
-                if (!el) return;
+                const statsEl = document.getElementById(player + 'Stats');
+                const numberEl = document.getElementById(player + 'ShotsNumber');
+                const dotsEl = document.getElementById(player + 'ShotsDots');
+                const accuracyEl = document.getElementById(player + 'Accuracy');
+                const percentEl = document.getElementById(player + 'AccuracyPercent');
 
-                if (settings.maxShots >= 99) {
-                    el.innerHTML = ''; // Hide for unlimited
+                if (!statsEl) return;
+
+                // Check if we should show stats (limited shots or aim bonus mode)
+                const showShots = settings.maxShots < 99;
+                const showAccuracy = settings.aimBonus && gameState.greenLight;
+
+                if (!showShots && !showAccuracy) {
+                    statsEl.classList.add('hidden');
                     return;
                 }
 
-                const used = gameState[player + 'ShotsUsed'];
-                let html = '';
-                for (let i = 0; i < settings.maxShots; i++) {
-                    const cls = i < used ? 'shot-dot used' : 'shot-dot';
-                    html += `<span class="${cls}"></span>`;
+                statsEl.classList.remove('hidden');
+
+                // Update shots remaining
+                if (showShots) {
+                    const used = gameState[player + 'ShotsUsed'];
+                    const remaining = settings.maxShots - used;
+
+                    numberEl.textContent = remaining;
+                    numberEl.parentElement.style.display = 'flex';
+
+                    // Build dots
+                    let dotsHtml = '';
+                    for (let i = 0; i < settings.maxShots; i++) {
+                        const cls = i < used ? 'shot-dot used' : 'shot-dot';
+                        dotsHtml += `<span class="${cls}"></span>`;
+                    }
+                    dotsEl.innerHTML = dotsHtml;
+                } else {
+                    numberEl.parentElement.style.display = 'none';
                 }
-                el.innerHTML = html;
+
+                // Update accuracy display
+                if (showAccuracy) {
+                    accuracyEl.classList.remove('hidden');
+                    const accuracy = calculateHitChance(player);
+                    percentEl.textContent = accuracy + '%';
+
+                    // Color based on accuracy level
+                    percentEl.classList.remove('low', 'medium', 'high');
+                    if (accuracy < 50) {
+                        percentEl.classList.add('low');
+                    } else if (accuracy < 80) {
+                        percentEl.classList.add('medium');
+                    } else {
+                        percentEl.classList.add('high');
+                    }
+                } else {
+                    accuracyEl.classList.add('hidden');
+                }
             });
+        }
+
+        // Start accuracy update loop
+        function startAccuracyUpdates() {
+            if (accuracyUpdateInterval) {
+                clearInterval(accuracyUpdateInterval);
+            }
+            if (settings.aimBonus) {
+                accuracyUpdateInterval = setInterval(updateStatsDisplay, 100);
+            }
+        }
+
+        // Stop accuracy update loop
+        function stopAccuracyUpdates() {
+            if (accuracyUpdateInterval) {
+                clearInterval(accuracyUpdateInterval);
+                accuracyUpdateInterval = null;
+            }
+        }
+
+        // Legacy function name for compatibility
+        function updateShotsDisplay() {
+            updateStatsDisplay();
         }
 
         // Load from localStorage
@@ -1565,6 +1730,11 @@
                 gameState.standoffTimeout = null;
             }
 
+            // Stop accuracy updates and hide stats
+            stopAccuracyUpdates();
+            document.getElementById('leftStats').classList.add('hidden');
+            document.getElementById('rightStats').classList.add('hidden');
+
             // Reset visual states
             const leftPistol = document.getElementById('leftPistol');
             const rightPistol = document.getElementById('rightPistol');
@@ -1631,6 +1801,11 @@
             resetRound();
             gameState.inProgress = true;
 
+            // Show stats display at start if limited ammo mode
+            if (settings.maxShots < 99) {
+                updateStatsDisplay();
+            }
+
             // Random timing for each light (F1 style)
             const baseTiming = 800;
             const variance = 400;
@@ -1656,8 +1831,9 @@
             document.getElementById('lightGreen1').classList.add('green-on');
             document.getElementById('lightGreen2').classList.add('green-on');
 
-            // Initialize shots display
-            updateShotsDisplay();
+            // Initialize stats display and start accuracy updates
+            updateStatsDisplay();
+            startAccuracyUpdates();
 
             // Check if both players already shot early (before green)
             // In the new system, we need both to have either hit or run out of shots, or reconsider
@@ -1843,6 +2019,9 @@
                 clearTimeout(gameState.standoffTimeout);
                 gameState.standoffTimeout = null;
             }
+
+            // Stop accuracy updates
+            stopAccuracyUpdates();
 
             // Determine outcome using new hit-based system
             let result = determineWinner();
