@@ -579,6 +579,238 @@
             opacity: 0.7;
         }
 
+        .settings-btn {
+            background: linear-gradient(to bottom, #4a3020, #3a2010);
+            color: #c9a959;
+            border: 2px solid #8b6914;
+            padding: 8px 20px;
+            font-size: 1rem;
+            font-family: 'Georgia', serif;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-left: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .settings-btn:hover {
+            background: linear-gradient(to bottom, #5a4030, #4a3020);
+        }
+
+        /* Settings Modal */
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .settings-overlay.hidden {
+            display: none;
+        }
+
+        .settings-box {
+            background: linear-gradient(to bottom, #3d2817, #2c1810);
+            border: 4px solid #8b6914;
+            border-radius: 15px;
+            padding: 30px 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 50px rgba(139,105,20,0.3);
+        }
+
+        .settings-box h2 {
+            color: #daa520;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 2px solid #8b6914;
+            padding-bottom: 10px;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            border: 3px solid #8b6914;
+            border-radius: 10px;
+            background: linear-gradient(to bottom, #2c1810, #1a0f08);
+            color: #c9a959;
+            font-family: 'Georgia', serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn:hover {
+            background: linear-gradient(to bottom, #3c2820, #2a1f18);
+        }
+
+        .mode-btn.active {
+            border-color: #daa520;
+            background: linear-gradient(to bottom, #4a3020, #3a2010);
+            color: #ffd700;
+        }
+
+        .mode-btn .mode-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .mode-btn .mode-desc {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        .settings-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+        }
+
+        .settings-section h3 {
+            color: #daa520;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+        }
+
+        .setting-label {
+            color: #c9a959;
+        }
+
+        .setting-value {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setting-input {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid #8b6914;
+            border-radius: 5px;
+            background: #2c1810;
+            color: #f4e4bc;
+            font-family: 'Georgia', serif;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .setting-input:focus {
+            outline: none;
+            border-color: #daa520;
+        }
+
+        .setting-unit {
+            color: #8b6914;
+            font-size: 0.9rem;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #daa520;
+        }
+
+        .settings-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .settings-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Georgia', serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .save-settings-btn {
+            background: linear-gradient(to bottom, #8b6914, #6b4a0a);
+            color: #f4e4bc;
+            border: 3px solid #daa520;
+        }
+
+        .save-settings-btn:hover {
+            background: linear-gradient(to bottom, #a07818, #8b6914);
+        }
+
+        .cancel-settings-btn {
+            background: linear-gradient(to bottom, #3a2010, #2a1008);
+            color: #c9a959;
+            border: 2px solid #8b6914;
+        }
+
+        .cancel-settings-btn:hover {
+            background: linear-gradient(to bottom, #4a3020, #3a2010);
+        }
+
+        /* Shot indicator */
+        .shots-display {
+            position: absolute;
+            bottom: 200px;
+            font-size: 1.2rem;
+            color: #c9a959;
+            text-align: center;
+        }
+
+        .player-left .shots-display {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .player-right .shots-display {
+            right: 50%;
+            transform: translateX(50%);
+        }
+
+        .shots-display .shot-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #8b6914;
+            margin: 0 3px;
+            transition: background 0.2s ease;
+        }
+
+        .shots-display .shot-dot.used {
+            background: #3a2010;
+        }
+
+        .shots-display .shot-dot.hit {
+            background: #4a9;
+        }
+
         /* Instructions Modal */
         .instructions-overlay {
             position: fixed;
@@ -711,6 +943,60 @@
         </div>
     </div>
 
+    <!-- Settings Overlay -->
+    <div class="settings-overlay hidden" id="settingsOverlay">
+        <div class="settings-box">
+            <h2>Game Settings</h2>
+
+            <div class="mode-buttons">
+                <button class="mode-btn" id="simpleModeBtn" onclick="setMode('simple')">
+                    <span class="mode-name">SIMPLE</span>
+                    <span class="mode-desc">100% accuracy, first shot wins</span>
+                </button>
+                <button class="mode-btn active" id="normalModeBtn" onclick="setMode('normal')">
+                    <span class="mode-name">NORMAL</span>
+                    <span class="mode-desc">70% accuracy, keep shooting</span>
+                </button>
+                <button class="mode-btn" id="realModeBtn" onclick="setMode('real')">
+                    <span class="mode-name">REAL</span>
+                    <span class="mode-desc">6 shots, aim improves over time</span>
+                </button>
+            </div>
+
+            <div class="settings-section" id="customSettings">
+                <h3>Custom Settings</h3>
+                <div class="setting-row">
+                    <span class="setting-label">Base Hit Chance</span>
+                    <div class="setting-value">
+                        <input type="number" id="hitChanceInput" class="setting-input" min="0" max="100" value="70">
+                        <span class="setting-unit">%</span>
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Shots per Round</span>
+                    <div class="setting-value">
+                        <input type="number" id="shotsInput" class="setting-input" min="1" max="99" value="99">
+                        <span class="setting-unit">(99 = unlimited)</span>
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Aim improves with time</span>
+                    <div class="setting-value">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="aimBonusCheck">
+                            <span class="setting-unit">+5% per 0.5s wait</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button class="cancel-settings-btn" onclick="closeSettings()">Cancel</button>
+                <button class="save-settings-btn" onclick="saveSettings()">Save</button>
+            </div>
+        </div>
+    </div>
+
     <div class="game-container">
         <!-- Header -->
         <header class="header">
@@ -824,6 +1110,7 @@
                         </div>
                     </div>
                     <div class="action-display" id="leftAction"></div>
+                    <div class="shots-display" id="leftShots"></div>
                 </div>
 
                 <div class="controls-display">
@@ -948,6 +1235,7 @@
                         </div>
                     </div>
                     <div class="action-display" id="rightAction"></div>
+                    <div class="shots-display" id="rightShots"></div>
                 </div>
 
                 <div class="controls-display">
@@ -960,8 +1248,9 @@
         <!-- Footer -->
         <footer class="footer">
             <button class="start-btn" id="startBtn" onclick="toggleDuel()">Begin Duel</button>
+            <button class="settings-btn" onclick="openSettings()">Settings</button>
             <button class="reset-btn" onclick="resetGame()">Reset All</button>
-            <div class="version">v1.3.0</div>
+            <div class="version">v1.4.0</div>
         </footer>
     </div>
 
@@ -977,17 +1266,36 @@
             { name: 'Founding Father', stars: 6 }
         ];
 
+        // Game settings with presets
+        const PRESETS = {
+            simple: { hitChance: 100, maxShots: 99, aimBonus: false },
+            normal: { hitChance: 70, maxShots: 99, aimBonus: false },
+            real: { hitChance: 30, maxShots: 6, aimBonus: true }
+        };
+
+        let settings = {
+            mode: 'normal',
+            hitChance: 70,
+            maxShots: 99,  // 99 = unlimited
+            aimBonus: false  // +5% per 0.5s wait
+        };
+
         let gameState = {
             left: { score: 0, streak: 0, level: 1 },
             right: { score: 0, streak: 0, level: 1 },
             inProgress: false,
-            isRunning: false,  // continuous mode - are we actively dueling?
+            isRunning: false,
             countdownPhase: 0,
             greenLight: false,
-            leftAction: null,  // 'shoot', 'reconsider', or null
-            rightAction: null,
-            leftActionTime: null,
-            rightActionTime: null,
+            greenLightTime: null,  // When green light started
+            leftReconsider: false,
+            rightReconsider: false,
+            leftShotsUsed: 0,
+            rightShotsUsed: 0,
+            leftLastShotTime: null,
+            rightLastShotTime: null,
+            leftHit: false,  // Has left player landed a hit?
+            rightHit: false,
             roundResolved: false,
             nextRoundTimeout: null,
             standoffTimeout: null
@@ -1086,6 +1394,108 @@
             });
         }
 
+        // Settings functions
+        function openSettings() {
+            document.getElementById('settingsOverlay').classList.remove('hidden');
+            updateSettingsUI();
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsOverlay').classList.add('hidden');
+        }
+
+        function setMode(mode) {
+            settings.mode = mode;
+            const preset = PRESETS[mode];
+            settings.hitChance = preset.hitChance;
+            settings.maxShots = preset.maxShots;
+            settings.aimBonus = preset.aimBonus;
+            updateSettingsUI();
+        }
+
+        function updateSettingsUI() {
+            // Update mode buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(settings.mode + 'ModeBtn');
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // Update input fields
+            document.getElementById('hitChanceInput').value = settings.hitChance;
+            document.getElementById('shotsInput').value = settings.maxShots;
+            document.getElementById('aimBonusCheck').checked = settings.aimBonus;
+        }
+
+        function saveSettings() {
+            // Read custom values
+            settings.hitChance = parseInt(document.getElementById('hitChanceInput').value) || 70;
+            settings.maxShots = parseInt(document.getElementById('shotsInput').value) || 99;
+            settings.aimBonus = document.getElementById('aimBonusCheck').checked;
+
+            // Clamp values
+            settings.hitChance = Math.max(0, Math.min(100, settings.hitChance));
+            settings.maxShots = Math.max(1, Math.min(99, settings.maxShots));
+
+            // Check if it matches a preset
+            for (const [mode, preset] of Object.entries(PRESETS)) {
+                if (settings.hitChance === preset.hitChance &&
+                    settings.maxShots === preset.maxShots &&
+                    settings.aimBonus === preset.aimBonus) {
+                    settings.mode = mode;
+                    break;
+                } else {
+                    settings.mode = 'custom';
+                }
+            }
+
+            // Save to localStorage
+            localStorage.setItem('duelSettings', JSON.stringify(settings));
+            closeSettings();
+            console.log('[DUEL] Settings saved:', settings);
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('duelSettings');
+            if (saved) {
+                const data = JSON.parse(saved);
+                settings = { ...settings, ...data };
+            }
+        }
+
+        // Calculate hit chance with aim bonus
+        function calculateHitChance(player) {
+            let chance = settings.hitChance;
+
+            if (settings.aimBonus && gameState.greenLightTime) {
+                const lastShotTime = gameState[player + 'LastShotTime'] || gameState.greenLightTime;
+                const timeSinceLastShot = Date.now() - lastShotTime;
+                const bonusIntervals = Math.floor(timeSinceLastShot / 500); // +5% per 0.5s
+                chance += bonusIntervals * 5;
+            }
+
+            return Math.min(100, chance);
+        }
+
+        // Update shots display
+        function updateShotsDisplay() {
+            ['left', 'right'].forEach(player => {
+                const el = document.getElementById(player + 'Shots');
+                if (!el) return;
+
+                if (settings.maxShots >= 99) {
+                    el.innerHTML = ''; // Hide for unlimited
+                    return;
+                }
+
+                const used = gameState[player + 'ShotsUsed'];
+                let html = '';
+                for (let i = 0; i < settings.maxShots; i++) {
+                    const cls = i < used ? 'shot-dot used' : 'shot-dot';
+                    html += `<span class="${cls}"></span>`;
+                }
+                el.innerHTML = html;
+            });
+        }
+
         // Load from localStorage
         function loadGame() {
             const saved = localStorage.getItem('duelGame');
@@ -1094,6 +1504,7 @@
                 gameState.left = data.left || { score: 0, streak: 0, level: 1 };
                 gameState.right = data.right || { score: 0, streak: 0, level: 1 };
             }
+            loadSettings();
             updateDisplay();
         }
 
@@ -1133,13 +1544,20 @@
         // Reset round state
         function resetRound() {
             console.log('[DUEL] resetRound called');
-            gameState.leftAction = null;
-            gameState.rightAction = null;
-            gameState.leftActionTime = null;
-            gameState.rightActionTime = null;
             gameState.greenLight = false;
+            gameState.greenLightTime = null;
             gameState.countdownPhase = 0;
             gameState.roundResolved = false;
+
+            // Reset player states
+            gameState.leftReconsider = false;
+            gameState.rightReconsider = false;
+            gameState.leftShotsUsed = 0;
+            gameState.rightShotsUsed = 0;
+            gameState.leftLastShotTime = null;
+            gameState.rightLastShotTime = null;
+            gameState.leftHit = false;
+            gameState.rightHit = false;
 
             // Clear any pending timeouts
             if (gameState.standoffTimeout) {
@@ -1164,6 +1582,9 @@
             rightAction.classList.remove('visible', 'shot', 'reconsidered', 'early');
             leftAction.textContent = '';
             rightAction.textContent = '';
+
+            // Update shots display
+            updateShotsDisplay();
 
             // Clear victory/defeat animations
             clearVictoryDefeat();
@@ -1229,23 +1650,29 @@
 
             // Green light!
             gameState.greenLight = true;
+            gameState.greenLightTime = Date.now();
             console.log('[DUEL] GREEN LIGHT! greenLight =', gameState.greenLight);
             resetLights();
             document.getElementById('lightGreen1').classList.add('green-on');
             document.getElementById('lightGreen2').classList.add('green-on');
 
-            // Check if both players already acted before green (early shots/reconsiders)
-            if (gameState.leftAction && gameState.rightAction) {
+            // Initialize shots display
+            updateShotsDisplay();
+
+            // Check if both players already shot early (before green)
+            // In the new system, we need both to have either hit or run out of shots, or reconsider
+            if ((gameState.leftHit || gameState.leftReconsider) &&
+                (gameState.rightHit || gameState.rightReconsider)) {
                 console.log('[DUEL] Both players already acted before green, resolving now');
                 resolveRound();
             } else {
-                // Set a timeout for standoff if no one acts within 5 seconds
+                // Set a timeout for standoff if no one lands a hit within 8 seconds
                 gameState.standoffTimeout = setTimeout(() => {
                     console.log('[DUEL] Standoff timeout reached');
                     if (!gameState.roundResolved && gameState.greenLight) {
                         resolveRound();
                     }
-                }, 5000);
+                }, 8000);
             }
         }
 
@@ -1265,41 +1692,132 @@
                 return;
             }
 
-            const actionKey = player + 'Action';
-            const timeKey = player + 'ActionTime';
+            const other = player === 'left' ? 'right' : 'left';
 
-            // Only record first action
-            if (gameState[actionKey] !== null) {
-                console.log('[DUEL] Rejected: player already acted');
+            // Handle reconsider
+            if (action === 'reconsider') {
+                // Can only reconsider once, and not after shooting
+                if (gameState[player + 'Reconsider'] || gameState[player + 'ShotsUsed'] > 0) {
+                    console.log('[DUEL] Rejected: already reconsidered or already shot');
+                    return;
+                }
+                gameState[player + 'Reconsider'] = true;
+
+                // Show reconsider animation after green
+                if (gameState.greenLight) {
+                    const pistol = document.getElementById(player + 'Pistol');
+                    pistol.classList.add('raised-' + player);
+                    showAction(player, 'MERCY!', 'reconsidered');
+                    checkRoundEnd();
+                }
                 return;
             }
 
-            gameState[actionKey] = action;
-            gameState[timeKey] = Date.now();
-            console.log('[DUEL] Action recorded:', player, action, 'at', gameState[timeKey]);
-
-            // Visual feedback for shooting (immediate)
+            // Handle shoot
             if (action === 'shoot') {
+                // Check if already hit someone or was hit
+                if (gameState[player + 'Hit'] || gameState[other + 'Hit']) {
+                    console.log('[DUEL] Rejected: round already decided by hit');
+                    return;
+                }
+
+                // Check if reconsidered (can't shoot after reconsidering)
+                if (gameState[player + 'Reconsider']) {
+                    console.log('[DUEL] Rejected: already reconsidered');
+                    return;
+                }
+
+                // Check shots remaining
+                if (settings.maxShots < 99 && gameState[player + 'ShotsUsed'] >= settings.maxShots) {
+                    console.log('[DUEL] Rejected: out of shots');
+                    showAction(player, 'EMPTY!', 'early');
+                    return;
+                }
+
+                // Fire the shot
+                gameState[player + 'ShotsUsed']++;
+                const now = Date.now();
+                gameState[player + 'LastShotTime'] = now;
+
+                // Visual feedback
                 const pistol = document.getElementById(player + 'Pistol');
                 const smoke = document.getElementById(player + 'Smoke');
+
+                // Reset and retrigger animations
+                pistol.classList.remove('firing-' + player);
+                smoke.classList.remove('active');
+                void pistol.offsetWidth; // Force reflow
                 pistol.classList.add('firing-' + player);
                 smoke.classList.add('active');
 
                 // Play gunshot sound
                 playGunshot();
 
-                // Show action if after green, or show "TOO EARLY" if before
-                if (gameState.greenLight) {
-                    showAction(player, 'FIRE!', 'shot');
-                } else {
+                // Update shots display
+                updateShotsDisplay();
+
+                // Before green = early shot (always miss)
+                if (!gameState.greenLight) {
                     showAction(player, 'TOO EARLY!', 'early');
+                    console.log('[DUEL] Shot fired early - will miss');
+                    return;
+                }
+
+                // After green - calculate hit chance
+                const hitChance = calculateHitChance(player);
+                const roll = Math.random() * 100;
+                const isHit = roll < hitChance;
+
+                console.log('[DUEL] Shot fired: chance=' + hitChance + '%, roll=' + roll.toFixed(1) + ', hit=' + isHit);
+
+                if (isHit) {
+                    gameState[player + 'Hit'] = true;
+                    showAction(player, 'HIT!', 'shot');
+
+                    // Check if other player reconsidered
+                    if (gameState[other + 'Reconsider']) {
+                        // Shot someone who showed mercy - dishonorable
+                        resolveRound();
+                    } else {
+                        // Clean hit - resolve round
+                        resolveRound();
+                    }
+                } else {
+                    showAction(player, 'MISS!', 'early');
+
+                    // Check if out of shots
+                    if (settings.maxShots < 99 && gameState[player + 'ShotsUsed'] >= settings.maxShots) {
+                        console.log('[DUEL] Player out of shots');
+                        checkRoundEnd();
+                    }
                 }
             }
+        }
 
-            // If both players have acted after green, resolve immediately
-            if (gameState.greenLight && gameState.leftAction && gameState.rightAction) {
-                console.log('[DUEL] Both players acted after green, resolving');
+        // Check if round should end
+        function checkRoundEnd() {
+            // Round ends when:
+            // 1. Someone landed a hit
+            // 2. Both players reconsidered
+            // 3. Both players are out of shots (in limited mode)
+
+            if (gameState.leftHit || gameState.rightHit) {
                 resolveRound();
+                return;
+            }
+
+            if (gameState.leftReconsider && gameState.rightReconsider) {
+                resolveRound();
+                return;
+            }
+
+            // Check if both are out of shots
+            if (settings.maxShots < 99) {
+                const leftDone = gameState.leftReconsider || gameState.leftShotsUsed >= settings.maxShots;
+                const rightDone = gameState.rightReconsider || gameState.rightShotsUsed >= settings.maxShots;
+                if (leftDone && rightDone) {
+                    resolveRound();
+                }
             }
         }
 
@@ -1313,8 +1831,8 @@
         // Resolve the round
         function resolveRound() {
             console.log('[DUEL] resolveRound called, roundResolved:', gameState.roundResolved, 'greenLight:', gameState.greenLight);
-            if (gameState.roundResolved || !gameState.greenLight) {
-                console.log('[DUEL] resolveRound rejected');
+            if (gameState.roundResolved) {
+                console.log('[DUEL] resolveRound rejected - already resolved');
                 return;
             }
             gameState.roundResolved = true;
@@ -1326,32 +1844,8 @@
                 gameState.standoffTimeout = null;
             }
 
-            const leftAction = gameState.leftAction;
-            const rightAction = gameState.rightAction;
-            const leftTime = gameState.leftActionTime;
-            const rightTime = gameState.rightActionTime;
-
-            // Determine if shots were early (before green light)
-            // We'll use a simple heuristic: if action was recorded and greenLight wasn't set yet
-            // Actually, we track this by checking if the action was set before greenLight became true
-            // For simplicity, we'll check if the action display shows "TOO EARLY"
-            const leftEarly = leftAction === 'shoot' && document.getElementById('leftAction').classList.contains('early');
-            const rightEarly = rightAction === 'shoot' && document.getElementById('rightAction').classList.contains('early');
-
-            // Show reconsider animations for those who chose it
-            if (leftAction === 'reconsider') {
-                const pistol = document.getElementById('leftPistol');
-                pistol.classList.add('raised-left');
-                showAction('left', 'MERCY!', 'reconsidered');
-            }
-            if (rightAction === 'reconsider') {
-                const pistol = document.getElementById('rightPistol');
-                pistol.classList.add('raised-right');
-                showAction('right', 'MERCY!', 'reconsidered');
-            }
-
-            // Determine outcome
-            let result = determineWinner(leftAction, rightAction, leftTime, rightTime, leftEarly, rightEarly);
+            // Determine outcome using new hit-based system
+            let result = determineWinner();
 
             // Apply result after a short delay
             setTimeout(() => {
@@ -1369,38 +1863,21 @@
             }, 1000);
         }
 
-        function determineWinner(leftAction, rightAction, leftTime, rightTime, leftEarly, rightEarly) {
-            // Both reconsider
-            if (leftAction === 'reconsider' && rightAction === 'reconsider') {
-                return { type: 'both_reconsider' };
-            }
+        function determineWinner() {
+            const leftHit = gameState.leftHit;
+            const rightHit = gameState.rightHit;
+            const leftReconsider = gameState.leftReconsider;
+            const rightReconsider = gameState.rightReconsider;
+            const leftShots = gameState.leftShotsUsed;
+            const rightShots = gameState.rightShotsUsed;
+            const leftTime = gameState.leftLastShotTime;
+            const rightTime = gameState.rightLastShotTime;
 
-            // One reconsiders, other shoots
-            if (leftAction === 'reconsider' && rightAction === 'shoot') {
-                if (rightEarly) {
-                    return { type: 'left_survives_early', winner: 'left' };
-                }
-                return { type: 'shot_merciful', winner: 'right', loser: 'left' };
-            }
-            if (rightAction === 'reconsider' && leftAction === 'shoot') {
-                if (leftEarly) {
-                    return { type: 'right_survives_early', winner: 'right' };
-                }
-                return { type: 'shot_merciful', winner: 'left', loser: 'right' };
-            }
+            console.log('[DUEL] determineWinner:', { leftHit, rightHit, leftReconsider, rightReconsider, leftShots, rightShots });
 
-            // Both shoot
-            if (leftAction === 'shoot' && rightAction === 'shoot') {
-                if (leftEarly && rightEarly) {
-                    return { type: 'both_early' };
-                }
-                if (leftEarly) {
-                    return { type: 'winner', winner: 'right' };
-                }
-                if (rightEarly) {
-                    return { type: 'winner', winner: 'left' };
-                }
-                // Both shot after green - faster wins
+            // Case 1: Both players hit (extremely rare with random timing)
+            if (leftHit && rightHit) {
+                // Whoever hit first wins
                 if (leftTime < rightTime) {
                     return { type: 'winner', winner: 'left' };
                 } else if (rightTime < leftTime) {
@@ -1410,29 +1887,59 @@
                 }
             }
 
-            // Only one shot (other did nothing)
-            if (leftAction === 'shoot' && !rightAction) {
-                if (leftEarly) {
-                    return { type: 'early_miss', shooter: 'left' };
+            // Case 2: One player hit
+            if (leftHit) {
+                if (rightReconsider) {
+                    // Shot someone showing mercy - dishonorable win
+                    return { type: 'shot_merciful', winner: 'left', loser: 'right' };
                 }
                 return { type: 'winner', winner: 'left' };
             }
-            if (rightAction === 'shoot' && !leftAction) {
-                if (rightEarly) {
-                    return { type: 'early_miss', shooter: 'right' };
+            if (rightHit) {
+                if (leftReconsider) {
+                    // Shot someone showing mercy - dishonorable win
+                    return { type: 'shot_merciful', winner: 'right', loser: 'left' };
                 }
                 return { type: 'winner', winner: 'right' };
             }
 
-            // One reconsiders, other does nothing
-            if (leftAction === 'reconsider' && !rightAction) {
+            // Case 3: Both reconsidered (no hits)
+            if (leftReconsider && rightReconsider) {
+                return { type: 'both_reconsider' };
+            }
+
+            // Case 4: One reconsidered, other shot but missed (or did nothing)
+            if (leftReconsider && rightShots > 0) {
+                // Right shot at merciful left but missed all shots
+                return { type: 'both_miss_mercy', merciful: 'left' };
+            }
+            if (rightReconsider && leftShots > 0) {
+                // Left shot at merciful right but missed all shots
+                return { type: 'both_miss_mercy', merciful: 'right' };
+            }
+
+            // Case 5: Both shot but both missed all shots
+            if (leftShots > 0 && rightShots > 0) {
+                return { type: 'both_miss' };
+            }
+
+            // Case 6: One reconsidered, other did nothing
+            if (leftReconsider && rightShots === 0) {
                 return { type: 'standoff', merciful: 'left' };
             }
-            if (rightAction === 'reconsider' && !leftAction) {
+            if (rightReconsider && leftShots === 0) {
                 return { type: 'standoff', merciful: 'right' };
             }
 
-            // Neither did anything
+            // Case 7: One shot (and missed), other did nothing
+            if (leftShots > 0 && rightShots === 0 && !rightReconsider) {
+                return { type: 'missed_standoff', shooter: 'left' };
+            }
+            if (rightShots > 0 && leftShots === 0 && !leftReconsider) {
+                return { type: 'missed_standoff', shooter: 'right' };
+            }
+
+            // Case 8: Neither did anything (standoff timeout)
             return { type: 'standoff' };
         }
 
@@ -1473,13 +1980,6 @@
                     addLoss(result.loser);
                     break;
 
-                case 'both_early':
-                    msgText.textContent = 'BOTH FIRED EARLY! DRAW!';
-                    msgText.className = 'message-text draw';
-                    gameState.left.streak = 0;
-                    gameState.right.streak = 0;
-                    break;
-
                 case 'draw':
                     msgText.textContent = 'A DRAW!';
                     msgText.className = 'message-text draw';
@@ -1487,17 +1987,24 @@
                     gameState.right.streak = 0;
                     break;
 
-                case 'early_miss':
-                    msgText.textContent = (result.shooter === 'left' ? 'FEDERALIST' : 'REPUBLICAN') + ' FIRED EARLY! MISS!';
-                    msgText.className = 'message-text early';
+                case 'both_miss':
+                    msgText.textContent = 'BOTH MISS! DRAW!';
+                    msgText.className = 'message-text draw';
+                    gameState.left.streak = 0;
+                    gameState.right.streak = 0;
                     break;
 
-                case 'left_survives_early':
-                case 'right_survives_early':
-                    msgText.textContent = (result.winner === 'left' ? 'FEDERALIST' : 'REPUBLICAN') + ' SURVIVES! OPPONENT MISSED!';
-                    msgText.className = 'message-text winner ' + result.winner + '-wins';
-                    winner = result.winner;
-                    loser = result.winner === 'left' ? 'right' : 'left';
+                case 'both_miss_mercy':
+                    // One showed mercy, other shot but missed all
+                    const mercifulPlayer = result.merciful === 'left' ? 'FEDERALIST' : 'REPUBLICAN';
+                    msgText.textContent = mercifulPlayer + ' SHOWS MERCY... OPPONENT MISSED!';
+                    msgText.className = 'message-text honor';
+                    levelUp(result.merciful); // Merciful player gains honor for surviving
+                    break;
+
+                case 'missed_standoff':
+                    msgText.textContent = (result.shooter === 'left' ? 'FEDERALIST' : 'REPUBLICAN') + ' FIRES... AND MISSES!';
+                    msgText.className = 'message-text draw';
                     break;
 
                 case 'standoff':
@@ -1561,10 +2068,15 @@
                     isRunning: false,
                     countdownPhase: 0,
                     greenLight: false,
-                    leftAction: null,
-                    rightAction: null,
-                    leftActionTime: null,
-                    rightActionTime: null,
+                    greenLightTime: null,
+                    leftReconsider: false,
+                    rightReconsider: false,
+                    leftShotsUsed: 0,
+                    rightShotsUsed: 0,
+                    leftLastShotTime: null,
+                    rightLastShotTime: null,
+                    leftHit: false,
+                    rightHit: false,
                     roundResolved: false,
                     nextRoundTimeout: null,
                     standoffTimeout: null
