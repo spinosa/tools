@@ -54,6 +54,28 @@
             100% { transform: rotate(120deg) scaleX(-1); }
         }
 
+        @keyframes celebrate {
+            0%, 100% { transform: translateY(0); }
+            25% { transform: translateY(-20px); }
+            50% { transform: translateY(0); }
+            75% { transform: translateY(-15px); }
+        }
+
+        @keyframes victory-glow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        @keyframes defeat-fall {
+            0% { transform: rotate(0deg) translateY(0); }
+            100% { transform: rotate(85deg) translateY(30px) translateX(40px); transform-origin: bottom center; }
+        }
+
+        @keyframes defeat-fall-right {
+            0% { transform: scaleX(-1) rotate(0deg) translateY(0); }
+            100% { transform: scaleX(-1) rotate(-85deg) translateY(30px) translateX(-40px); transform-origin: bottom center; }
+        }
+
         body {
             font-family: 'Georgia', serif;
             background: linear-gradient(to bottom, #2c1810 0%, #4a3020 50%, #3d2817 100%);
@@ -114,13 +136,33 @@
         }
 
         .player-left {
-            background: linear-gradient(135deg, rgba(70,40,20,0.8) 0%, transparent 100%);
-            border-right: 2px solid rgba(139,105,20,0.3);
+            background: linear-gradient(135deg, rgba(30,58,95,0.6) 0%, rgba(20,40,70,0.3) 50%, transparent 100%);
+            border-right: 2px solid rgba(100,150,200,0.3);
+            transition: background 0.5s ease;
+        }
+
+        .player-left.winner {
+            background: linear-gradient(135deg, rgba(50,100,180,0.8) 0%, rgba(30,70,140,0.5) 50%, rgba(20,50,100,0.3) 100%);
+            box-shadow: inset 0 0 100px rgba(100,150,255,0.3);
+        }
+
+        .player-left.loser {
+            background: linear-gradient(135deg, rgba(40,40,40,0.8) 0%, rgba(20,20,20,0.5) 100%);
         }
 
         .player-right {
-            background: linear-gradient(225deg, rgba(70,40,20,0.8) 0%, transparent 100%);
-            border-left: 2px solid rgba(139,105,20,0.3);
+            background: linear-gradient(225deg, rgba(90,30,30,0.6) 0%, rgba(70,20,20,0.3) 50%, transparent 100%);
+            border-left: 2px solid rgba(200,100,100,0.3);
+            transition: background 0.5s ease;
+        }
+
+        .player-right.winner {
+            background: linear-gradient(225deg, rgba(180,50,50,0.8) 0%, rgba(140,30,30,0.5) 50%, rgba(100,20,20,0.3) 100%);
+            box-shadow: inset 0 0 100px rgba(255,100,100,0.3);
+        }
+
+        .player-right.loser {
+            background: linear-gradient(225deg, rgba(40,40,40,0.8) 0%, rgba(20,20,20,0.5) 100%);
         }
 
         /* Player Stats */
@@ -136,11 +178,45 @@
         .player-name {
             font-size: 1.8rem;
             font-weight: bold;
-            color: #daa520;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
             margin-bottom: 10px;
             border-bottom: 2px solid #8b6914;
             padding-bottom: 5px;
+        }
+
+        .player-left .player-name {
+            color: #6eb5ff;
+            border-bottom-color: #4a90d9;
+        }
+
+        .player-right .player-name {
+            color: #ff6e6e;
+            border-bottom-color: #d94a4a;
+        }
+
+        /* Victory overlay flash */
+        .victory-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .player-left .victory-overlay {
+            background: radial-gradient(ellipse at center, rgba(100,180,255,0.4) 0%, transparent 70%);
+        }
+
+        .player-right .victory-overlay {
+            background: radial-gradient(ellipse at center, rgba(255,100,100,0.4) 0%, transparent 70%);
+        }
+
+        .player-side.winner .victory-overlay {
+            opacity: 1;
+            animation: victory-glow 1s ease-in-out infinite;
         }
 
         .stat-row {
@@ -200,6 +276,19 @@
             bottom: 0;
             width: 100%;
             height: 100%;
+            transition: transform 0.5s ease;
+        }
+
+        .duelist.celebrating .duelist-body {
+            animation: celebrate 0.6s ease-in-out 3;
+        }
+
+        .duelist.defeated .duelist-body {
+            animation: defeat-fall 0.8s ease-in forwards;
+        }
+
+        .player-right .duelist.defeated .duelist-body {
+            animation: defeat-fall-right 0.8s ease-in forwards;
         }
 
         .pistol-container {
@@ -361,6 +450,18 @@
         .message-text.winner {
             color: #ffd700;
             animation: pulse 0.5s infinite;
+        }
+
+        .message-text.winner.left-wins {
+            color: #6eb5ff;
+            text-shadow: 0 0 20px rgba(100,180,255,0.8), 3px 3px 6px rgba(0,0,0,0.8);
+            border-color: #4a90d9;
+        }
+
+        .message-text.winner.right-wins {
+            color: #ff6e6e;
+            text-shadow: 0 0 20px rgba(255,100,100,0.8), 3px 3px 6px rgba(0,0,0,0.8);
+            border-color: #d94a4a;
         }
 
         .message-text.draw {
@@ -620,7 +721,8 @@
         <!-- Main Arena -->
         <main class="arena">
             <!-- Left Player -->
-            <div class="player-side player-left">
+            <div class="player-side player-left" id="leftSide">
+                <div class="victory-overlay"></div>
                 <div class="player-stats">
                     <div class="player-name">Federalist</div>
                     <div class="stat-row">
@@ -639,7 +741,7 @@
                 </div>
 
                 <div class="duelist-area">
-                    <div class="duelist">
+                    <div class="duelist" id="leftDuelist">
                         <div class="duelist-body">
                             <!-- SVG Duelist Left -->
                             <svg viewBox="0 0 200 350" xmlns="http://www.w3.org/2000/svg">
@@ -756,7 +858,8 @@
             </div>
 
             <!-- Right Player -->
-            <div class="player-side player-right">
+            <div class="player-side player-right" id="rightSide">
+                <div class="victory-overlay"></div>
                 <div class="player-stats">
                     <div class="player-name">Republican</div>
                     <div class="stat-row">
@@ -775,7 +878,7 @@
                 </div>
 
                 <div class="duelist-area">
-                    <div class="duelist">
+                    <div class="duelist" id="rightDuelist">
                         <div class="duelist-body">
                             <!-- SVG Duelist Right (mirrored) -->
                             <svg viewBox="0 0 200 350" xmlns="http://www.w3.org/2000/svg" style="transform: scaleX(-1);">
@@ -858,7 +961,7 @@
         <footer class="footer">
             <button class="start-btn" id="startBtn" onclick="toggleDuel()">Begin Duel</button>
             <button class="reset-btn" onclick="resetGame()">Reset All</button>
-            <div class="version">v1.2.0</div>
+            <div class="version">v1.3.0</div>
         </footer>
     </div>
 
@@ -889,6 +992,99 @@
             nextRoundTimeout: null,
             standoffTimeout: null
         };
+
+        // Audio context for sound effects
+        let audioContext = null;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioContext;
+        }
+
+        // Generate gunshot sound using Web Audio API
+        function playGunshot() {
+            try {
+                const ctx = initAudio();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+
+                const now = ctx.currentTime;
+
+                // Create noise buffer for explosion
+                const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
+                const noiseData = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < noiseData.length; i++) {
+                    noiseData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / noiseData.length, 2);
+                }
+
+                // Noise source
+                const noiseSource = ctx.createBufferSource();
+                noiseSource.buffer = noiseBuffer;
+
+                // Low-pass filter for boom
+                const lowpass = ctx.createBiquadFilter();
+                lowpass.type = 'lowpass';
+                lowpass.frequency.setValueAtTime(1000, now);
+                lowpass.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+
+                // High-pass for crack
+                const highpass = ctx.createBiquadFilter();
+                highpass.type = 'highpass';
+                highpass.frequency.setValueAtTime(500, now);
+
+                // Gain envelope
+                const gainNode = ctx.createGain();
+                gainNode.gain.setValueAtTime(1.5, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+
+                // Connect: noise -> lowpass -> highpass -> gain -> output
+                noiseSource.connect(lowpass);
+                lowpass.connect(highpass);
+                highpass.connect(gainNode);
+                gainNode.connect(ctx.destination);
+
+                noiseSource.start(now);
+                noiseSource.stop(now + 0.3);
+
+                console.log('[DUEL] Gunshot sound played');
+            } catch (e) {
+                console.log('[DUEL] Audio error:', e);
+            }
+        }
+
+        // Show winner/loser animations
+        function showVictoryDefeat(winner, loser) {
+            console.log('[DUEL] showVictoryDefeat:', winner, loser);
+
+            // Clear previous states
+            clearVictoryDefeat();
+
+            if (winner) {
+                const winnerSide = document.getElementById(winner + 'Side');
+                const winnerDuelist = document.getElementById(winner + 'Duelist');
+                if (winnerSide) winnerSide.classList.add('winner');
+                if (winnerDuelist) winnerDuelist.classList.add('celebrating');
+            }
+
+            if (loser) {
+                const loserSide = document.getElementById(loser + 'Side');
+                const loserDuelist = document.getElementById(loser + 'Duelist');
+                if (loserSide) loserSide.classList.add('loser');
+                if (loserDuelist) loserDuelist.classList.add('defeated');
+            }
+        }
+
+        function clearVictoryDefeat() {
+            ['left', 'right'].forEach(side => {
+                const sideEl = document.getElementById(side + 'Side');
+                const duelistEl = document.getElementById(side + 'Duelist');
+                if (sideEl) sideEl.classList.remove('winner', 'loser');
+                if (duelistEl) duelistEl.classList.remove('celebrating', 'defeated');
+            });
+        }
 
         // Load from localStorage
         function loadGame() {
@@ -968,6 +1164,9 @@
             rightAction.classList.remove('visible', 'shot', 'reconsidered', 'early');
             leftAction.textContent = '';
             rightAction.textContent = '';
+
+            // Clear victory/defeat animations
+            clearVictoryDefeat();
 
             document.getElementById('messageDisplay').style.display = 'none';
             resetLights();
@@ -1085,6 +1284,9 @@
                 const smoke = document.getElementById(player + 'Smoke');
                 pistol.classList.add('firing-' + player);
                 smoke.classList.add('active');
+
+                // Play gunshot sound
+                playGunshot();
 
                 // Show action if after green, or show "TOO EARLY" if before
                 if (gameState.greenLight) {
@@ -1239,12 +1441,17 @@
             const msgText = document.getElementById('messageText');
             msgDisplay.style.display = 'block';
 
+            let winner = null;
+            let loser = null;
+
             switch (result.type) {
                 case 'winner':
                     msgText.textContent = (result.winner === 'left' ? 'FEDERALIST' : 'REPUBLICAN') + ' WINS!';
-                    msgText.className = 'message-text winner';
+                    msgText.className = 'message-text winner ' + result.winner + '-wins';
+                    winner = result.winner;
+                    loser = result.winner === 'left' ? 'right' : 'left';
                     addWin(result.winner);
-                    addLoss(result.winner === 'left' ? 'right' : 'left');
+                    addLoss(loser);
                     break;
 
                 case 'both_reconsider':
@@ -1258,7 +1465,9 @@
 
                 case 'shot_merciful':
                     msgText.textContent = (result.winner === 'left' ? 'FEDERALIST' : 'REPUBLICAN') + ' WINS... WITHOUT HONOR';
-                    msgText.className = 'message-text winner';
+                    msgText.className = 'message-text winner ' + result.winner + '-wins';
+                    winner = result.winner;
+                    loser = result.loser;
                     addWin(result.winner);
                     levelDown(result.winner); // Winner loses honor for shooting merciful opponent
                     addLoss(result.loser);
@@ -1286,7 +1495,9 @@
                 case 'left_survives_early':
                 case 'right_survives_early':
                     msgText.textContent = (result.winner === 'left' ? 'FEDERALIST' : 'REPUBLICAN') + ' SURVIVES! OPPONENT MISSED!';
-                    msgText.className = 'message-text winner';
+                    msgText.className = 'message-text winner ' + result.winner + '-wins';
+                    winner = result.winner;
+                    loser = result.winner === 'left' ? 'right' : 'left';
                     break;
 
                 case 'standoff':
@@ -1294,6 +1505,9 @@
                     msgText.className = 'message-text draw';
                     break;
             }
+
+            // Show victory/defeat animations
+            showVictoryDefeat(winner, loser);
 
             updateDisplay();
             saveGame();
