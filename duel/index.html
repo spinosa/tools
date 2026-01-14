@@ -858,7 +858,7 @@
         <footer class="footer">
             <button class="start-btn" id="startBtn" onclick="toggleDuel()">Begin Duel</button>
             <button class="reset-btn" onclick="resetGame()">Reset All</button>
-            <div class="version">v1.1.0</div>
+            <div class="version">v1.2.0</div>
         </footer>
     </div>
 
@@ -886,7 +886,8 @@
             leftActionTime: null,
             rightActionTime: null,
             roundResolved: false,
-            nextRoundTimeout: null
+            nextRoundTimeout: null,
+            standoffTimeout: null
         };
 
         // Load from localStorage
@@ -935,6 +936,7 @@
 
         // Reset round state
         function resetRound() {
+            console.log('[DUEL] resetRound called');
             gameState.leftAction = null;
             gameState.rightAction = null;
             gameState.leftActionTime = null;
@@ -942,6 +944,12 @@
             gameState.greenLight = false;
             gameState.countdownPhase = 0;
             gameState.roundResolved = false;
+
+            // Clear any pending timeouts
+            if (gameState.standoffTimeout) {
+                clearTimeout(gameState.standoffTimeout);
+                gameState.standoffTimeout = null;
+            }
 
             // Reset visual states
             const leftPistol = document.getElementById('leftPistol');
@@ -1022,26 +1030,54 @@
 
             // Green light!
             gameState.greenLight = true;
+            console.log('[DUEL] GREEN LIGHT! greenLight =', gameState.greenLight);
             resetLights();
             document.getElementById('lightGreen1').classList.add('green-on');
             document.getElementById('lightGreen2').classList.add('green-on');
 
-            // Check for pre-green actions and resolve
-            setTimeout(() => resolveRound(), 100);
+            // Check if both players already acted before green (early shots/reconsiders)
+            if (gameState.leftAction && gameState.rightAction) {
+                console.log('[DUEL] Both players already acted before green, resolving now');
+                resolveRound();
+            } else {
+                // Set a timeout for standoff if no one acts within 5 seconds
+                gameState.standoffTimeout = setTimeout(() => {
+                    console.log('[DUEL] Standoff timeout reached');
+                    if (!gameState.roundResolved && gameState.greenLight) {
+                        resolveRound();
+                    }
+                }, 5000);
+            }
         }
 
         // Handle player actions
         function handleAction(player, action) {
-            if (!gameState.inProgress || gameState.roundResolved) return;
+            console.log('[DUEL] handleAction called:', player, action,
+                'inProgress:', gameState.inProgress,
+                'roundResolved:', gameState.roundResolved,
+                'greenLight:', gameState.greenLight);
+
+            if (!gameState.inProgress) {
+                console.log('[DUEL] Rejected: game not in progress');
+                return;
+            }
+            if (gameState.roundResolved) {
+                console.log('[DUEL] Rejected: round already resolved');
+                return;
+            }
 
             const actionKey = player + 'Action';
             const timeKey = player + 'ActionTime';
 
             // Only record first action
-            if (gameState[actionKey] !== null) return;
+            if (gameState[actionKey] !== null) {
+                console.log('[DUEL] Rejected: player already acted');
+                return;
+            }
 
             gameState[actionKey] = action;
             gameState[timeKey] = Date.now();
+            console.log('[DUEL] Action recorded:', player, action, 'at', gameState[timeKey]);
 
             // Visual feedback for shooting (immediate)
             if (action === 'shoot') {
@@ -1060,6 +1096,7 @@
 
             // If both players have acted after green, resolve immediately
             if (gameState.greenLight && gameState.leftAction && gameState.rightAction) {
+                console.log('[DUEL] Both players acted after green, resolving');
                 resolveRound();
             }
         }
@@ -1073,8 +1110,19 @@
 
         // Resolve the round
         function resolveRound() {
-            if (gameState.roundResolved || !gameState.greenLight) return;
+            console.log('[DUEL] resolveRound called, roundResolved:', gameState.roundResolved, 'greenLight:', gameState.greenLight);
+            if (gameState.roundResolved || !gameState.greenLight) {
+                console.log('[DUEL] resolveRound rejected');
+                return;
+            }
             gameState.roundResolved = true;
+            console.log('[DUEL] Round is now resolved');
+
+            // Clear standoff timeout if it exists
+            if (gameState.standoffTimeout) {
+                clearTimeout(gameState.standoffTimeout);
+                gameState.standoffTimeout = null;
+            }
 
             const leftAction = gameState.leftAction;
             const rightAction = gameState.rightAction;
@@ -1289,6 +1337,9 @@
                 if (gameState.nextRoundTimeout) {
                     clearTimeout(gameState.nextRoundTimeout);
                 }
+                if (gameState.standoffTimeout) {
+                    clearTimeout(gameState.standoffTimeout);
+                }
                 gameState = {
                     left: { score: 0, streak: 0, level: 1 },
                     right: { score: 0, streak: 0, level: 1 },
@@ -1301,7 +1352,8 @@
                     leftActionTime: null,
                     rightActionTime: null,
                     roundResolved: false,
-                    nextRoundTimeout: null
+                    nextRoundTimeout: null,
+                    standoffTimeout: null
                 };
                 resetRound();
                 updateDisplay();
@@ -1318,6 +1370,7 @@
         // Keyboard handling
         document.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
+            console.log('[DUEL] Key pressed:', key, 'inProgress:', gameState.inProgress);
 
             // Allow spacebar to toggle duel even when not in progress
             if (key === ' ' || key === 'spacebar') {
@@ -1326,7 +1379,10 @@
                 return;
             }
 
-            if (!gameState.inProgress) return;
+            if (!gameState.inProgress) {
+                console.log('[DUEL] Key ignored: game not in progress');
+                return;
+            }
 
             switch (key) {
                 case 'q':
