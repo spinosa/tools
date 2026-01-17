@@ -1,0 +1,2364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Duel - 1776</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes smoke {
+            0% { opacity: 0.8; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(2); }
+        }
+
+        @keyframes recoil-left {
+            0% { transform: rotate(-10deg); }
+            30% { transform: rotate(-25deg) translateX(-8px); }
+            100% { transform: rotate(-10deg); }
+        }
+
+        @keyframes recoil-right {
+            0% { transform: rotate(10deg) scaleX(-1); }
+            30% { transform: rotate(25deg) scaleX(-1) translateX(8px); }
+            100% { transform: rotate(10deg) scaleX(-1); }
+        }
+
+        @keyframes raise-left {
+            0% { transform: rotate(-10deg); }
+            100% { transform: rotate(-90deg) translateY(-20px); }
+        }
+
+        @keyframes raise-right {
+            0% { transform: rotate(10deg) scaleX(-1); }
+            100% { transform: rotate(90deg) scaleX(-1) translateY(-20px); }
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: translateY(0); }
+            25% { transform: translateY(-20px); }
+            50% { transform: translateY(0); }
+            75% { transform: translateY(-15px); }
+        }
+
+        @keyframes victory-glow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        @keyframes defeat-fall {
+            0% { transform: rotate(0deg) translateY(0); }
+            100% { transform: rotate(85deg) translateY(30px) translateX(40px); transform-origin: bottom center; }
+        }
+
+        @keyframes defeat-fall-right {
+            0% { transform: scaleX(-1) rotate(0deg) translateY(0); }
+            100% { transform: scaleX(-1) rotate(-85deg) translateY(30px) translateX(-40px); transform-origin: bottom center; }
+        }
+
+        @keyframes gun-fall-left {
+            0% { transform: rotate(-10deg) translateY(0); }
+            100% { transform: rotate(-10deg) translateY(200px); opacity: 0.5; }
+        }
+
+        @keyframes gun-fall-right {
+            0% { transform: rotate(10deg) scaleX(-1) translateY(0); }
+            100% { transform: rotate(10deg) scaleX(-1) translateY(200px); opacity: 0.5; }
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(to bottom, #2c1810 0%, #4a3020 50%, #3d2817 100%);
+            min-height: 100vh;
+            color: #f4e4bc;
+            overflow: hidden;
+            outline: none;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-image:
+                radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%);
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+            border-bottom: 3px solid #8b6914;
+        }
+
+        .title {
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8), 0 0 20px rgba(139,105,20,0.5);
+            letter-spacing: 8px;
+            color: #daa520;
+            animation: flicker 3s infinite;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            font-style: italic;
+            color: #c9a959;
+            margin-top: 5px;
+        }
+
+        /* Main Arena */
+        .arena {
+            flex: 1;
+            display: flex;
+            position: relative;
+        }
+
+        /* Player Sides */
+        .player-side {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            position: relative;
+        }
+
+        .player-left {
+            background: linear-gradient(135deg, rgba(30,58,95,0.6) 0%, rgba(20,40,70,0.3) 50%, transparent 100%);
+            border-right: 2px solid rgba(100,150,200,0.3);
+            transition: background 0.5s ease;
+        }
+
+        .player-left.winner {
+            background: linear-gradient(135deg, rgba(50,100,180,0.8) 0%, rgba(30,70,140,0.5) 50%, rgba(20,50,100,0.3) 100%);
+            box-shadow: inset 0 0 100px rgba(100,150,255,0.3);
+        }
+
+        .player-left.loser {
+            background: linear-gradient(135deg, rgba(40,40,40,0.8) 0%, rgba(20,20,20,0.5) 100%);
+        }
+
+        .player-right {
+            background: linear-gradient(225deg, rgba(90,30,30,0.6) 0%, rgba(70,20,20,0.3) 50%, transparent 100%);
+            border-left: 2px solid rgba(200,100,100,0.3);
+            transition: background 0.5s ease;
+        }
+
+        .player-right.winner {
+            background: linear-gradient(225deg, rgba(180,50,50,0.8) 0%, rgba(140,30,30,0.5) 50%, rgba(100,20,20,0.3) 100%);
+            box-shadow: inset 0 0 100px rgba(255,100,100,0.3);
+        }
+
+        .player-right.loser {
+            background: linear-gradient(225deg, rgba(40,40,40,0.8) 0%, rgba(20,20,20,0.5) 100%);
+        }
+
+        /* Player Stats */
+        .player-stats {
+            background: linear-gradient(to bottom, #3d2817, #2c1810);
+            border: 3px solid #8b6914;
+            border-radius: 10px;
+            padding: 15px 25px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        .player-name {
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            margin-bottom: 10px;
+            border-bottom: 2px solid #8b6914;
+            padding-bottom: 5px;
+        }
+
+        .player-left .player-name {
+            color: #6eb5ff;
+            border-bottom-color: #4a90d9;
+        }
+
+        .player-right .player-name {
+            color: #ff6e6e;
+            border-bottom-color: #d94a4a;
+        }
+
+        /* Victory overlay flash */
+        .victory-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .player-left .victory-overlay {
+            background: radial-gradient(ellipse at center, rgba(100,180,255,0.4) 0%, transparent 70%);
+        }
+
+        .player-right .victory-overlay {
+            background: radial-gradient(ellipse at center, rgba(255,100,100,0.4) 0%, transparent 70%);
+        }
+
+        .player-side.winner .victory-overlay {
+            opacity: 1;
+            animation: victory-glow 1s ease-in-out infinite;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 1.1rem;
+        }
+
+        .stat-label {
+            color: #c9a959;
+        }
+
+        .stat-value {
+            color: #f4e4bc;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .level-display {
+            margin-top: 10px;
+            padding: 8px 15px;
+            background: linear-gradient(to bottom, #8b6914, #6b4a0a);
+            border-radius: 5px;
+            font-size: 1.2rem;
+        }
+
+        .level-title {
+            font-size: 0.9rem;
+            color: #f4e4bc;
+        }
+
+        .level-name {
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        /* Duelist Display */
+        .duelist-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .duelist {
+            position: relative;
+            width: 200px;
+            height: 350px;
+        }
+
+        .duelist-body {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s ease;
+        }
+
+        .duelist.celebrating .duelist-body {
+            animation: celebrate 0.6s ease-in-out 3;
+        }
+
+        .duelist.defeated .duelist-body {
+            animation: defeat-fall 0.8s ease-in forwards;
+        }
+
+        .player-right .duelist.defeated .duelist-body {
+            animation: defeat-fall-right 0.8s ease-in forwards;
+        }
+
+        .pistol-container {
+            position: absolute;
+            width: 100px;
+            height: 50px;
+            transition: transform 0.3s ease;
+        }
+
+        /* Left player - gun held at right side, pointing right toward opponent */
+        .player-left .pistol-container {
+            right: -60px;
+            top: 85px;
+            transform: rotate(-10deg);
+            transform-origin: left center;
+        }
+
+        /* Right player - gun held at left side, pointing left toward opponent */
+        .player-right .pistol-container {
+            left: -60px;
+            top: 85px;
+            transform: rotate(10deg) scaleX(-1);
+            transform-origin: right center;
+        }
+
+        .pistol-container.firing-left {
+            animation: recoil-left 0.15s ease-out;
+        }
+
+        .pistol-container.firing-right {
+            animation: recoil-right 0.15s ease-out;
+        }
+
+        .pistol-container.raised-left {
+            animation: raise-left 0.5s ease-out forwards;
+        }
+
+        .pistol-container.raised-right {
+            animation: raise-right 0.5s ease-out forwards;
+        }
+
+        /* Gun falls when player is defeated */
+        .duelist.defeated .pistol-container {
+            animation: gun-fall-left 0.8s ease-in forwards;
+        }
+
+        .player-right .duelist.defeated .pistol-container {
+            animation: gun-fall-right 0.8s ease-in forwards;
+        }
+
+        .smoke-effect {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, rgba(200,200,200,0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .smoke-effect.active {
+            animation: smoke 1s ease-out forwards;
+        }
+
+        .player-left .smoke-effect {
+            right: -100px;
+            top: 70px;
+        }
+
+        .player-right .smoke-effect {
+            left: -100px;
+            top: 70px;
+        }
+
+        /* Controls Display */
+        .controls-display {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid #8b6914;
+            border-radius: 8px;
+            padding: 10px 20px;
+            text-align: center;
+        }
+
+        .control-key {
+            display: inline-block;
+            background: linear-gradient(to bottom, #4a3020, #2c1810);
+            border: 2px solid #8b6914;
+            border-radius: 5px;
+            padding: 5px 12px;
+            margin: 3px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #daa520;
+            box-shadow: 0 3px 0 #1a0f08, 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            color: #c9a959;
+            margin-left: 5px;
+        }
+
+        /* Center Area - Countdown */
+        .center-area {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+        }
+
+        .countdown-lights {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 30px;
+            background: linear-gradient(to bottom, #1a1a1a, #2d2d2d);
+            border: 4px solid #444;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 2px 0 rgba(255,255,255,0.1);
+        }
+
+        .light-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .light {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #333;
+            border: 3px solid #555;
+            box-shadow: inset 0 -5px 10px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+        }
+
+        .light.red-on {
+            background: radial-gradient(circle at 30% 30%, #ff6666, #cc0000);
+            box-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000, inset 0 -5px 10px rgba(0,0,0,0.3);
+        }
+
+        .light.green-on {
+            background: radial-gradient(circle at 30% 30%, #66ff66, #00cc00);
+            box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00, inset 0 -5px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Messages */
+        .message-display {
+            position: absolute;
+            left: 50%;
+            top: 30%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 20;
+        }
+
+        .message-text {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            padding: 20px 40px;
+            background: rgba(0,0,0,0.7);
+            border: 3px solid #8b6914;
+            border-radius: 10px;
+        }
+
+        .message-text.winner {
+            color: #ffd700;
+            animation: pulse 0.5s infinite;
+        }
+
+        .message-text.winner.left-wins {
+            color: #6eb5ff;
+            text-shadow: 0 0 20px rgba(100,180,255,0.8), 3px 3px 6px rgba(0,0,0,0.8);
+            border-color: #4a90d9;
+        }
+
+        .message-text.winner.right-wins {
+            color: #ff6e6e;
+            text-shadow: 0 0 20px rgba(255,100,100,0.8), 3px 3px 6px rgba(0,0,0,0.8);
+            border-color: #d94a4a;
+        }
+
+        .message-text.draw {
+            color: #87ceeb;
+        }
+
+        .message-text.early {
+            color: #ff6b6b;
+            animation: shake 0.3s infinite;
+        }
+
+        .message-text.honor {
+            color: #9370db;
+        }
+
+        /* Action Display */
+        .action-display {
+            position: absolute;
+            bottom: 150px;
+            font-size: 1.5rem;
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 8px;
+            border: 2px solid #8b6914;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .action-display.visible {
+            opacity: 1;
+        }
+
+        .action-display.shot {
+            color: #ff6b6b;
+        }
+
+        .action-display.reconsidered {
+            color: #87ceeb;
+        }
+
+        .action-display.early {
+            color: #ff4444;
+        }
+
+        .player-left .action-display {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .player-right .action-display {
+            right: 50%;
+            transform: translateX(50%);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+            border-top: 2px solid #8b6914;
+        }
+
+        .start-btn {
+            background: linear-gradient(to bottom, #8b6914, #6b4a0a);
+            color: #f4e4bc;
+            border: 3px solid #daa520;
+            padding: 15px 50px;
+            font-size: 1.5rem;
+            font-family: 'Georgia', serif;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .start-btn:hover {
+            background: linear-gradient(to bottom, #a07818, #8b6914);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+        }
+
+        .start-btn:active {
+            transform: translateY(0);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .reset-btn {
+            background: linear-gradient(to bottom, #5a3020, #3a1810);
+            color: #c9a959;
+            border: 2px solid #8b6914;
+            padding: 8px 20px;
+            font-size: 1rem;
+            font-family: 'Georgia', serif;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-left: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .reset-btn:hover {
+            background: linear-gradient(to bottom, #6a4030, #4a2820);
+        }
+
+        .version {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #8b6914;
+            opacity: 0.7;
+        }
+
+        .settings-btn {
+            background: linear-gradient(to bottom, #4a3020, #3a2010);
+            color: #c9a959;
+            border: 2px solid #8b6914;
+            padding: 8px 20px;
+            font-size: 1rem;
+            font-family: 'Georgia', serif;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-left: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .settings-btn:hover {
+            background: linear-gradient(to bottom, #5a4030, #4a3020);
+        }
+
+        /* Settings Modal */
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .settings-overlay.hidden {
+            display: none;
+        }
+
+        .settings-box {
+            background: linear-gradient(to bottom, #3d2817, #2c1810);
+            border: 4px solid #8b6914;
+            border-radius: 15px;
+            padding: 30px 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 50px rgba(139,105,20,0.3);
+        }
+
+        .settings-box h2 {
+            color: #daa520;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 2px solid #8b6914;
+            padding-bottom: 10px;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            border: 3px solid #8b6914;
+            border-radius: 10px;
+            background: linear-gradient(to bottom, #2c1810, #1a0f08);
+            color: #c9a959;
+            font-family: 'Georgia', serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn:hover {
+            background: linear-gradient(to bottom, #3c2820, #2a1f18);
+        }
+
+        .mode-btn.active {
+            border-color: #daa520;
+            background: linear-gradient(to bottom, #4a3020, #3a2010);
+            color: #ffd700;
+        }
+
+        .mode-btn .mode-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .mode-btn .mode-desc {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        .settings-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+        }
+
+        .settings-section h3 {
+            color: #daa520;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+        }
+
+        .setting-label {
+            color: #c9a959;
+        }
+
+        .setting-value {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setting-input {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid #8b6914;
+            border-radius: 5px;
+            background: #2c1810;
+            color: #f4e4bc;
+            font-family: 'Georgia', serif;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .setting-input:focus {
+            outline: none;
+            border-color: #daa520;
+        }
+
+        .setting-unit {
+            color: #8b6914;
+            font-size: 0.9rem;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #daa520;
+        }
+
+        .settings-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .settings-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Georgia', serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .save-settings-btn {
+            background: linear-gradient(to bottom, #8b6914, #6b4a0a);
+            color: #f4e4bc;
+            border: 3px solid #daa520;
+        }
+
+        .save-settings-btn:hover {
+            background: linear-gradient(to bottom, #a07818, #8b6914);
+        }
+
+        .cancel-settings-btn {
+            background: linear-gradient(to bottom, #3a2010, #2a1008);
+            color: #c9a959;
+            border: 2px solid #8b6914;
+        }
+
+        .cancel-settings-btn:hover {
+            background: linear-gradient(to bottom, #4a3020, #3a2010);
+        }
+
+        /* Stats display - shots and accuracy on outside of character */
+        .stats-display {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            z-index: 10;
+            background: rgba(0,0,0,0.5);
+            padding: 15px 10px;
+            border-radius: 10px;
+            border: 2px solid rgba(139,105,20,0.5);
+        }
+
+        .player-left .stats-display {
+            left: 10px;
+            right: auto;
+        }
+
+        .player-right .stats-display {
+            right: 10px;
+            left: auto;
+        }
+
+        .shots-remaining {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .shots-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #c9a959;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            line-height: 1;
+        }
+
+        .player-left .shots-number {
+            color: #6ab7ff;
+        }
+
+        .player-right .shots-number {
+            color: #ff6b6b;
+        }
+
+        .shots-dots {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            max-width: 80px;
+        }
+
+        .shots-dots .shot-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #c9a959;
+            box-shadow: 0 0 8px rgba(201, 169, 89, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .player-left .shots-dots .shot-dot {
+            background: #6ab7ff;
+            box-shadow: 0 0 8px rgba(106, 183, 255, 0.5);
+        }
+
+        .player-right .shots-dots .shot-dot {
+            background: #ff6b6b;
+            box-shadow: 0 0 8px rgba(255, 107, 107, 0.5);
+        }
+
+        .shots-dots .shot-dot.used {
+            background: #3a3a3a;
+            box-shadow: none;
+            opacity: 0.4;
+        }
+
+        .accuracy-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .accuracy-display.hidden {
+            display: none;
+        }
+
+        .accuracy-label {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .accuracy-percent {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #4a9;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            line-height: 1;
+        }
+
+        .accuracy-percent.low {
+            color: #c44;
+        }
+
+        .accuracy-percent.medium {
+            color: #ca4;
+        }
+
+        .accuracy-percent.high {
+            color: #4a9;
+        }
+
+        .stats-display.hidden {
+            display: none;
+        }
+
+        /* Instructions Modal */
+        .instructions-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .instructions-overlay.hidden {
+            display: none;
+        }
+
+        .instructions-box {
+            background: linear-gradient(to bottom, #3d2817, #2c1810);
+            border: 4px solid #8b6914;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 700px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(139,105,20,0.3);
+        }
+
+        .instructions-box h2 {
+            color: #daa520;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #8b6914;
+            padding-bottom: 10px;
+        }
+
+        .instructions-box p {
+            margin: 15px 0;
+            line-height: 1.6;
+            color: #f4e4bc;
+        }
+
+        .instructions-box .rules {
+            text-align: left;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+        }
+
+        .instructions-box .rules li {
+            margin: 10px 0;
+            color: #c9a959;
+        }
+
+        .instructions-box .keys-display {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+        }
+
+        .key-group {
+            text-align: center;
+        }
+
+        .key-group h3 {
+            color: #daa520;
+            margin-bottom: 10px;
+        }
+
+        .begin-btn {
+            background: linear-gradient(to bottom, #8b6914, #6b4a0a);
+            color: #f4e4bc;
+            border: 3px solid #daa520;
+            padding: 15px 60px;
+            font-size: 1.3rem;
+            font-family: 'Georgia', serif;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-top: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .begin-btn:hover {
+            background: linear-gradient(to bottom, #a07818, #8b6914);
+        }
+
+        /* Level Stars */
+        .level-stars {
+            color: #ffd700;
+            font-size: 1.2rem;
+            letter-spacing: 3px;
+        }
+    </style>
+</head>
+<body tabindex="0">
+    <!-- Instructions Overlay -->
+    <div class="instructions-overlay" id="instructionsOverlay">
+        <div class="instructions-box">
+            <h2>⚔ The Duel of Honor ⚔</h2>
+            <p><em>Philadelphia, 1776</em></p>
+            <p>Two gentlemen of the Continental Congress settle their differences in the time-honored tradition.</p>
+
+            <div class="rules">
+                <h3 style="color: #daa520; text-align: center;">Rules of Engagement</h3>
+                <ul>
+                    <li><strong>Wait for the green light!</strong> Shooting early means your shot goes wide.</li>
+                    <li><strong>First to fire after green wins</strong> - unless they shot early!</li>
+                    <li><strong>Reconsider</strong> - raise your pistol to spare your opponent. Only revealed after green.</li>
+                    <li>If you reconsider but your opponent shoots you: they win but lose honor (down a level)</li>
+                    <li>If both reconsider: both gain honor (up a level)</li>
+                    <li>Win 3 duels in a row to gain honor (up a level)</li>
+                </ul>
+            </div>
+
+            <div class="keys-display">
+                <div class="key-group">
+                    <h3>Left Duelist</h3>
+                    <div><span class="control-key">Q</span><span class="control-label">Fire!</span></div>
+                    <div style="margin-top: 10px;"><span class="control-key">A</span><span class="control-label">Reconsider</span></div>
+                </div>
+                <div class="key-group">
+                    <h3>Right Duelist</h3>
+                    <div><span class="control-key">L</span><span class="control-label">Fire!</span></div>
+                    <div style="margin-top: 10px;"><span class="control-key">P</span><span class="control-label">Reconsider</span></div>
+                </div>
+            </div>
+
+            <button class="begin-btn" onclick="closeInstructions()">Enter the Field of Honor</button>
+        </div>
+    </div>
+
+    <!-- Settings Overlay -->
+    <div class="settings-overlay hidden" id="settingsOverlay">
+        <div class="settings-box">
+            <h2>Game Settings</h2>
+
+            <div class="mode-buttons">
+                <button class="mode-btn" id="simpleModeBtn" onclick="setMode('simple')">
+                    <span class="mode-name">SIMPLE</span>
+                    <span class="mode-desc">100% accuracy, first shot wins</span>
+                </button>
+                <button class="mode-btn active" id="normalModeBtn" onclick="setMode('normal')">
+                    <span class="mode-name">NORMAL</span>
+                    <span class="mode-desc">70% accuracy, keep shooting</span>
+                </button>
+                <button class="mode-btn" id="realModeBtn" onclick="setMode('real')">
+                    <span class="mode-name">REAL</span>
+                    <span class="mode-desc">6 shots, aim improves over time</span>
+                </button>
+            </div>
+
+            <div class="settings-section" id="customSettings">
+                <h3>Custom Settings</h3>
+                <div class="setting-row">
+                    <span class="setting-label">Base Hit Chance</span>
+                    <div class="setting-value">
+                        <input type="number" id="hitChanceInput" class="setting-input" min="0" max="100" value="70">
+                        <span class="setting-unit">%</span>
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Shots per Round</span>
+                    <div class="setting-value">
+                        <input type="number" id="shotsInput" class="setting-input" min="1" max="99" value="99">
+                        <span class="setting-unit">(99 = unlimited)</span>
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Aim improves with time</span>
+                    <div class="setting-value">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="aimBonusCheck">
+                            <span class="setting-unit">+5% per 0.5s wait</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button class="cancel-settings-btn" onclick="closeSettings()">Cancel</button>
+                <button class="save-settings-btn" onclick="saveSettings()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="title">THE DUEL</h1>
+            <p class="subtitle">A Matter of Honor — Anno Domini 1776</p>
+        </header>
+
+        <!-- Main Arena -->
+        <main class="arena">
+            <!-- Left Player -->
+            <div class="player-side player-left" id="leftSide">
+                <div class="victory-overlay"></div>
+                <div class="player-stats">
+                    <div class="player-name">Federalist</div>
+                    <div class="stat-row">
+                        <span class="stat-label">Score:</span>
+                        <span class="stat-value" id="leftScore">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Streak:</span>
+                        <span class="stat-value" id="leftStreak">0</span>
+                    </div>
+                    <div class="level-display">
+                        <div class="level-title">Rank</div>
+                        <div class="level-name" id="leftLevel">Gentleman</div>
+                        <div class="level-stars" id="leftStars">★</div>
+                    </div>
+                </div>
+
+                <div class="duelist-area">
+                    <div class="duelist" id="leftDuelist">
+                        <div class="duelist-body">
+                            <!-- SVG Duelist Left -->
+                            <svg viewBox="0 0 200 350" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Boots -->
+                                <ellipse cx="70" cy="340" rx="25" ry="10" fill="#1a1a1a"/>
+                                <ellipse cx="130" cy="340" rx="25" ry="10" fill="#1a1a1a"/>
+                                <rect x="55" y="300" width="30" height="45" fill="#2a2a2a"/>
+                                <rect x="115" y="300" width="30" height="45" fill="#2a2a2a"/>
+
+                                <!-- Breeches -->
+                                <path d="M60 200 L60 305 L90 305 L100 200 Z" fill="#d4c4a0"/>
+                                <path d="M100 200 L110 305 L140 305 L140 200 Z" fill="#d4c4a0"/>
+
+                                <!-- Coat -->
+                                <path d="M40 100 L40 210 L80 220 L100 210 L120 220 L160 210 L160 100 Z" fill="#1e3a5f"/>
+                                <path d="M50 100 L50 200 L70 205 L70 100 Z" fill="#c9a959"/>
+                                <path d="M130 100 L130 205 L150 200 L150 100 Z" fill="#c9a959"/>
+
+                                <!-- Waistcoat -->
+                                <rect x="70" y="100" width="60" height="80" fill="#c9a959"/>
+                                <circle cx="100" cy="120" r="4" fill="#8b6914"/>
+                                <circle cx="100" cy="140" r="4" fill="#8b6914"/>
+                                <circle cx="100" cy="160" r="4" fill="#8b6914"/>
+
+                                <!-- Collar/Cravat -->
+                                <ellipse cx="100" cy="95" rx="25" ry="10" fill="#fff"/>
+
+                                <!-- Head -->
+                                <ellipse cx="100" cy="60" rx="30" ry="35" fill="#e8d0b0"/>
+
+                                <!-- Face -->
+                                <ellipse cx="88" cy="55" rx="4" ry="3" fill="#2a2a2a"/>
+                                <ellipse cx="112" cy="55" rx="4" ry="3" fill="#2a2a2a"/>
+                                <path d="M95 70 Q100 75 105 70" stroke="#8b6914" fill="none" stroke-width="2"/>
+
+                                <!-- Hair/Wig -->
+                                <path d="M70 50 Q70 20 100 15 Q130 20 130 50" fill="#888"/>
+                                <ellipse cx="65" cy="60" rx="8" ry="15" fill="#888"/>
+                                <ellipse cx="135" cy="60" rx="8" ry="15" fill="#888"/>
+
+                                <!-- Arm (right, holding pistol) -->
+                                <g id="leftArm">
+                                    <path d="M155 110 Q180 130 175 160" stroke="#1e3a5f" fill="none" stroke-width="20" stroke-linecap="round"/>
+                                    <ellipse cx="175" cy="165" rx="12" ry="15" fill="#e8d0b0"/>
+                                </g>
+
+                                <!-- Left arm -->
+                                <path d="M45 110 Q20 150 40 180" stroke="#1e3a5f" fill="none" stroke-width="20" stroke-linecap="round"/>
+                                <ellipse cx="40" cy="185" rx="12" ry="15" fill="#e8d0b0"/>
+                            </svg>
+                        </div>
+                        <div class="pistol-container" id="leftPistol">
+                            <!-- SVG Pistol -->
+                            <svg viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Barrel -->
+                                <rect x="50" y="20" width="70" height="12" rx="2" fill="#4a4a4a"/>
+                                <rect x="50" y="22" width="70" height="4" fill="#5a5a5a"/>
+
+                                <!-- Barrel end -->
+                                <ellipse cx="120" cy="26" rx="3" ry="6" fill="#3a3a3a"/>
+
+                                <!-- Lock plate -->
+                                <path d="M30 15 L55 15 L55 40 L30 45 Z" fill="#8b6914"/>
+                                <circle cx="42" cy="28" r="6" fill="#6b4a0a"/>
+
+                                <!-- Hammer -->
+                                <path d="M35 15 L40 5 L45 5 L45 15" fill="#4a4a4a"/>
+
+                                <!-- Grip -->
+                                <path d="M10 25 L35 20 L35 45 L20 55 L5 50 Z" fill="#5a3a20"/>
+                                <path d="M12 28 L32 24 L32 42 L18 50 L8 46 Z" fill="#6b4a30"/>
+
+                                <!-- Trigger guard -->
+                                <path d="M25 40 Q35 55 45 40" stroke="#8b6914" fill="none" stroke-width="3"/>
+
+                                <!-- Trigger -->
+                                <rect x="33" y="42" width="4" height="10" fill="#4a4a4a"/>
+                            </svg>
+                            <div class="smoke-effect" id="leftSmoke"></div>
+                        </div>
+                    </div>
+                    <div class="action-display" id="leftAction"></div>
+                </div>
+
+                <div class="stats-display hidden" id="leftStats">
+                    <div class="shots-remaining">
+                        <div class="shots-number" id="leftShotsNumber">6</div>
+                        <div class="shots-dots" id="leftShotsDots"></div>
+                    </div>
+                    <div class="accuracy-display hidden" id="leftAccuracy">
+                        <div class="accuracy-label">Accuracy</div>
+                        <div class="accuracy-percent" id="leftAccuracyPercent">30%</div>
+                    </div>
+                </div>
+
+                <div class="controls-display">
+                    <div><span class="control-key">Q</span><span class="control-label">Fire</span></div>
+                    <div><span class="control-key">A</span><span class="control-label">Reconsider</span></div>
+                </div>
+            </div>
+
+            <!-- Center - Countdown -->
+            <div class="center-area">
+                <div class="countdown-lights" id="countdownLights">
+                    <div class="light-row">
+                        <div class="light" id="light1"></div>
+                        <div class="light" id="light2"></div>
+                    </div>
+                    <div class="light-row">
+                        <div class="light" id="light3"></div>
+                        <div class="light" id="light4"></div>
+                    </div>
+                    <div class="light-row">
+                        <div class="light" id="light5"></div>
+                        <div class="light" id="light6"></div>
+                    </div>
+                    <div class="light-row">
+                        <div class="light green" id="lightGreen1"></div>
+                        <div class="light green" id="lightGreen2"></div>
+                    </div>
+                </div>
+                <div class="message-display" id="messageDisplay" style="display: none;">
+                    <div class="message-text" id="messageText"></div>
+                </div>
+            </div>
+
+            <!-- Right Player -->
+            <div class="player-side player-right" id="rightSide">
+                <div class="victory-overlay"></div>
+                <div class="player-stats">
+                    <div class="player-name">Republican</div>
+                    <div class="stat-row">
+                        <span class="stat-label">Score:</span>
+                        <span class="stat-value" id="rightScore">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Streak:</span>
+                        <span class="stat-value" id="rightStreak">0</span>
+                    </div>
+                    <div class="level-display">
+                        <div class="level-title">Rank</div>
+                        <div class="level-name" id="rightLevel">Gentleman</div>
+                        <div class="level-stars" id="rightStars">★</div>
+                    </div>
+                </div>
+
+                <div class="duelist-area">
+                    <div class="duelist" id="rightDuelist">
+                        <div class="duelist-body">
+                            <!-- SVG Duelist Right (mirrored) -->
+                            <svg viewBox="0 0 200 350" xmlns="http://www.w3.org/2000/svg" style="transform: scaleX(-1);">
+                                <!-- Boots -->
+                                <ellipse cx="70" cy="340" rx="25" ry="10" fill="#1a1a1a"/>
+                                <ellipse cx="130" cy="340" rx="25" ry="10" fill="#1a1a1a"/>
+                                <rect x="55" y="300" width="30" height="45" fill="#2a2a2a"/>
+                                <rect x="115" y="300" width="30" height="45" fill="#2a2a2a"/>
+
+                                <!-- Breeches -->
+                                <path d="M60 200 L60 305 L90 305 L100 200 Z" fill="#d4c4a0"/>
+                                <path d="M100 200 L110 305 L140 305 L140 200 Z" fill="#d4c4a0"/>
+
+                                <!-- Coat - Different color -->
+                                <path d="M40 100 L40 210 L80 220 L100 210 L120 220 L160 210 L160 100 Z" fill="#5a1e1e"/>
+                                <path d="M50 100 L50 200 L70 205 L70 100 Z" fill="#c9a959"/>
+                                <path d="M130 100 L130 205 L150 200 L150 100 Z" fill="#c9a959"/>
+
+                                <!-- Waistcoat -->
+                                <rect x="70" y="100" width="60" height="80" fill="#c9a959"/>
+                                <circle cx="100" cy="120" r="4" fill="#8b6914"/>
+                                <circle cx="100" cy="140" r="4" fill="#8b6914"/>
+                                <circle cx="100" cy="160" r="4" fill="#8b6914"/>
+
+                                <!-- Collar/Cravat -->
+                                <ellipse cx="100" cy="95" rx="25" ry="10" fill="#fff"/>
+
+                                <!-- Head -->
+                                <ellipse cx="100" cy="60" rx="30" ry="35" fill="#e8d0b0"/>
+
+                                <!-- Face -->
+                                <ellipse cx="88" cy="55" rx="4" ry="3" fill="#2a2a2a"/>
+                                <ellipse cx="112" cy="55" rx="4" ry="3" fill="#2a2a2a"/>
+                                <path d="M95 70 Q100 75 105 70" stroke="#8b6914" fill="none" stroke-width="2"/>
+
+                                <!-- Hair/Wig -->
+                                <path d="M70 50 Q70 20 100 15 Q130 20 130 50" fill="#654321"/>
+                                <ellipse cx="65" cy="60" rx="8" ry="15" fill="#654321"/>
+                                <ellipse cx="135" cy="60" rx="8" ry="15" fill="#654321"/>
+
+                                <!-- Arm (right, holding pistol) -->
+                                <g id="rightArm">
+                                    <path d="M155 110 Q180 130 175 160" stroke="#5a1e1e" fill="none" stroke-width="20" stroke-linecap="round"/>
+                                    <ellipse cx="175" cy="165" rx="12" ry="15" fill="#e8d0b0"/>
+                                </g>
+
+                                <!-- Left arm -->
+                                <path d="M45 110 Q20 150 40 180" stroke="#5a1e1e" fill="none" stroke-width="20" stroke-linecap="round"/>
+                                <ellipse cx="40" cy="185" rx="12" ry="15" fill="#e8d0b0"/>
+                            </svg>
+                        </div>
+                        <div class="pistol-container" id="rightPistol">
+                            <!-- SVG Pistol -->
+                            <svg viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="50" y="20" width="70" height="12" rx="2" fill="#4a4a4a"/>
+                                <rect x="50" y="22" width="70" height="4" fill="#5a5a5a"/>
+                                <ellipse cx="120" cy="26" rx="3" ry="6" fill="#3a3a3a"/>
+                                <path d="M30 15 L55 15 L55 40 L30 45 Z" fill="#8b6914"/>
+                                <circle cx="42" cy="28" r="6" fill="#6b4a0a"/>
+                                <path d="M35 15 L40 5 L45 5 L45 15" fill="#4a4a4a"/>
+                                <path d="M10 25 L35 20 L35 45 L20 55 L5 50 Z" fill="#5a3a20"/>
+                                <path d="M12 28 L32 24 L32 42 L18 50 L8 46 Z" fill="#6b4a30"/>
+                                <path d="M25 40 Q35 55 45 40" stroke="#8b6914" fill="none" stroke-width="3"/>
+                                <rect x="33" y="42" width="4" height="10" fill="#4a4a4a"/>
+                            </svg>
+                            <div class="smoke-effect" id="rightSmoke"></div>
+                        </div>
+                    </div>
+                    <div class="action-display" id="rightAction"></div>
+                </div>
+
+                <div class="stats-display hidden" id="rightStats">
+                    <div class="shots-remaining">
+                        <div class="shots-number" id="rightShotsNumber">6</div>
+                        <div class="shots-dots" id="rightShotsDots"></div>
+                    </div>
+                    <div class="accuracy-display hidden" id="rightAccuracy">
+                        <div class="accuracy-label">Accuracy</div>
+                        <div class="accuracy-percent" id="rightAccuracyPercent">30%</div>
+                    </div>
+                </div>
+
+                <div class="controls-display">
+                    <div><span class="control-key">L</span><span class="control-label">Fire</span></div>
+                    <div><span class="control-key">P</span><span class="control-label">Reconsider</span></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <button class="start-btn" id="startBtn" onclick="toggleDuel()">Begin Duel</button>
+            <button class="settings-btn" onclick="openSettings()">Settings</button>
+            <button class="reset-btn" onclick="resetGame()">Reset All</button>
+            <div class="version">v1.6.1</div>
+        </footer>
+    </div>
+
+    <script>
+        // Game State
+        const LEVELS = [
+            { name: 'Scoundrel', stars: 0 },
+            { name: 'Gentleman', stars: 1 },
+            { name: 'Esquire', stars: 2 },
+            { name: 'Captain', stars: 3 },
+            { name: 'Colonel', stars: 4 },
+            { name: 'General', stars: 5 },
+            { name: 'Founding Father', stars: 6 }
+        ];
+
+        // Game settings with presets
+        const PRESETS = {
+            simple: { hitChance: 100, maxShots: 99, aimBonus: false },
+            normal: { hitChance: 70, maxShots: 99, aimBonus: false },
+            real: { hitChance: 30, maxShots: 6, aimBonus: true }
+        };
+
+        let settings = {
+            mode: 'normal',
+            hitChance: 70,
+            maxShots: 99,  // 99 = unlimited
+            aimBonus: false  // +5% per 0.5s wait
+        };
+
+        let gameState = {
+            left: { score: 0, streak: 0, level: 1 },
+            right: { score: 0, streak: 0, level: 1 },
+            inProgress: false,
+            isRunning: false,
+            countdownPhase: 0,
+            greenLight: false,
+            greenLightTime: null,  // When green light started
+            leftReconsider: false,
+            rightReconsider: false,
+            leftShotsUsed: 0,
+            rightShotsUsed: 0,
+            leftLastShotTime: null,
+            rightLastShotTime: null,
+            leftHit: false,  // Has left player landed a hit?
+            rightHit: false,
+            roundResolved: false,
+            nextRoundTimeout: null,
+            standoffTimeout: null
+        };
+
+        // Audio context for sound effects
+        let audioContext = null;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioContext;
+        }
+
+        // Generate gunshot sound using Web Audio API
+        function playGunshot() {
+            try {
+                const ctx = initAudio();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+
+                const now = ctx.currentTime;
+
+                // Create noise buffer for explosion
+                const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
+                const noiseData = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < noiseData.length; i++) {
+                    noiseData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / noiseData.length, 2);
+                }
+
+                // Noise source
+                const noiseSource = ctx.createBufferSource();
+                noiseSource.buffer = noiseBuffer;
+
+                // Low-pass filter for boom
+                const lowpass = ctx.createBiquadFilter();
+                lowpass.type = 'lowpass';
+                lowpass.frequency.setValueAtTime(1000, now);
+                lowpass.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+
+                // High-pass for crack
+                const highpass = ctx.createBiquadFilter();
+                highpass.type = 'highpass';
+                highpass.frequency.setValueAtTime(500, now);
+
+                // Gain envelope
+                const gainNode = ctx.createGain();
+                gainNode.gain.setValueAtTime(1.5, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+
+                // Connect: noise -> lowpass -> highpass -> gain -> output
+                noiseSource.connect(lowpass);
+                lowpass.connect(highpass);
+                highpass.connect(gainNode);
+                gainNode.connect(ctx.destination);
+
+                noiseSource.start(now);
+                noiseSource.stop(now + 0.3);
+
+                console.log('[DUEL] Gunshot sound played');
+            } catch (e) {
+                console.log('[DUEL] Audio error:', e);
+            }
+        }
+
+        // Show winner/loser animations
+        function showVictoryDefeat(winner, loser) {
+            console.log('[DUEL] showVictoryDefeat:', winner, loser);
+
+            // Clear previous states
+            clearVictoryDefeat();
+
+            if (winner) {
+                const winnerSide = document.getElementById(winner + 'Side');
+                const winnerDuelist = document.getElementById(winner + 'Duelist');
+                if (winnerSide) winnerSide.classList.add('winner');
+                if (winnerDuelist) winnerDuelist.classList.add('celebrating');
+            }
+
+            if (loser) {
+                const loserSide = document.getElementById(loser + 'Side');
+                const loserDuelist = document.getElementById(loser + 'Duelist');
+                if (loserSide) loserSide.classList.add('loser');
+                if (loserDuelist) loserDuelist.classList.add('defeated');
+            }
+        }
+
+        function clearVictoryDefeat() {
+            ['left', 'right'].forEach(side => {
+                const sideEl = document.getElementById(side + 'Side');
+                const duelistEl = document.getElementById(side + 'Duelist');
+                if (sideEl) sideEl.classList.remove('winner', 'loser');
+                if (duelistEl) duelistEl.classList.remove('celebrating', 'defeated');
+            });
+        }
+
+        // Settings functions
+        function openSettings() {
+            document.getElementById('settingsOverlay').classList.remove('hidden');
+            updateSettingsUI();
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsOverlay').classList.add('hidden');
+        }
+
+        function setMode(mode) {
+            settings.mode = mode;
+            const preset = PRESETS[mode];
+            settings.hitChance = preset.hitChance;
+            settings.maxShots = preset.maxShots;
+            settings.aimBonus = preset.aimBonus;
+            updateSettingsUI();
+        }
+
+        function updateSettingsUI() {
+            // Update mode buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(settings.mode + 'ModeBtn');
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // Update input fields
+            document.getElementById('hitChanceInput').value = settings.hitChance;
+            document.getElementById('shotsInput').value = settings.maxShots;
+            document.getElementById('aimBonusCheck').checked = settings.aimBonus;
+        }
+
+        function saveSettings() {
+            // Read custom values
+            settings.hitChance = parseInt(document.getElementById('hitChanceInput').value) || 70;
+            settings.maxShots = parseInt(document.getElementById('shotsInput').value) || 99;
+            settings.aimBonus = document.getElementById('aimBonusCheck').checked;
+
+            // Clamp values
+            settings.hitChance = Math.max(0, Math.min(100, settings.hitChance));
+            settings.maxShots = Math.max(1, Math.min(99, settings.maxShots));
+
+            // Check if it matches a preset
+            for (const [mode, preset] of Object.entries(PRESETS)) {
+                if (settings.hitChance === preset.hitChance &&
+                    settings.maxShots === preset.maxShots &&
+                    settings.aimBonus === preset.aimBonus) {
+                    settings.mode = mode;
+                    break;
+                } else {
+                    settings.mode = 'custom';
+                }
+            }
+
+            // Save to localStorage
+            localStorage.setItem('duelSettings', JSON.stringify(settings));
+            closeSettings();
+            console.log('[DUEL] Settings saved:', settings);
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('duelSettings');
+            if (saved) {
+                const data = JSON.parse(saved);
+                settings = { ...settings, ...data };
+            }
+        }
+
+        // Accuracy update interval
+        let accuracyUpdateInterval = null;
+
+        // Calculate hit chance with aim bonus
+        function calculateHitChance(player) {
+            let chance = settings.hitChance;
+
+            if (settings.aimBonus && gameState.greenLightTime) {
+                const timeSinceGreen = Date.now() - gameState.greenLightTime;
+                const bonusIntervals = Math.floor(timeSinceGreen / 100); // +5% per 0.1s
+                chance += bonusIntervals * 5;
+            }
+
+            return Math.min(100, chance);
+        }
+
+        // Update stats display (shots and accuracy)
+        function updateStatsDisplay() {
+            ['left', 'right'].forEach(player => {
+                const statsEl = document.getElementById(player + 'Stats');
+                const numberEl = document.getElementById(player + 'ShotsNumber');
+                const dotsEl = document.getElementById(player + 'ShotsDots');
+                const accuracyEl = document.getElementById(player + 'Accuracy');
+                const percentEl = document.getElementById(player + 'AccuracyPercent');
+
+                if (!statsEl) return;
+
+                // Check if we should show stats (limited shots or aim bonus mode)
+                const showShots = settings.maxShots < 99;
+                const showAccuracy = settings.aimBonus && gameState.greenLight;
+
+                if (!showShots && !showAccuracy) {
+                    statsEl.classList.add('hidden');
+                    return;
+                }
+
+                statsEl.classList.remove('hidden');
+
+                // Update shots remaining
+                if (showShots) {
+                    const used = gameState[player + 'ShotsUsed'];
+                    const remaining = settings.maxShots - used;
+
+                    numberEl.textContent = remaining;
+                    numberEl.parentElement.style.display = 'flex';
+
+                    // Build dots
+                    let dotsHtml = '';
+                    for (let i = 0; i < settings.maxShots; i++) {
+                        const cls = i < used ? 'shot-dot used' : 'shot-dot';
+                        dotsHtml += `<span class="${cls}"></span>`;
+                    }
+                    dotsEl.innerHTML = dotsHtml;
+                } else {
+                    numberEl.parentElement.style.display = 'none';
+                }
+
+                // Update accuracy display
+                if (showAccuracy) {
+                    accuracyEl.classList.remove('hidden');
+                    const accuracy = calculateHitChance(player);
+                    percentEl.textContent = accuracy + '%';
+
+                    // Color based on accuracy level
+                    percentEl.classList.remove('low', 'medium', 'high');
+                    if (accuracy < 50) {
+                        percentEl.classList.add('low');
+                    } else if (accuracy < 80) {
+                        percentEl.classList.add('medium');
+                    } else {
+                        percentEl.classList.add('high');
+                    }
+                } else {
+                    accuracyEl.classList.add('hidden');
+                }
+            });
+        }
+
+        // Start accuracy update loop
+        function startAccuracyUpdates() {
+            if (accuracyUpdateInterval) {
+                clearInterval(accuracyUpdateInterval);
+            }
+            if (settings.aimBonus) {
+                accuracyUpdateInterval = setInterval(updateStatsDisplay, 100);
+            }
+        }
+
+        // Stop accuracy update loop
+        function stopAccuracyUpdates() {
+            if (accuracyUpdateInterval) {
+                clearInterval(accuracyUpdateInterval);
+                accuracyUpdateInterval = null;
+            }
+        }
+
+        // Legacy function name for compatibility
+        function updateShotsDisplay() {
+            updateStatsDisplay();
+        }
+
+        // Load from localStorage
+        function loadGame() {
+            const saved = localStorage.getItem('duelGame');
+            if (saved) {
+                const data = JSON.parse(saved);
+                gameState.left = data.left || { score: 0, streak: 0, level: 1 };
+                gameState.right = data.right || { score: 0, streak: 0, level: 1 };
+            }
+            loadSettings();
+            updateDisplay();
+        }
+
+        // Save to localStorage
+        function saveGame() {
+            localStorage.setItem('duelGame', JSON.stringify({
+                left: gameState.left,
+                right: gameState.right
+            }));
+        }
+
+        // Update display
+        function updateDisplay() {
+            document.getElementById('leftScore').textContent = gameState.left.score;
+            document.getElementById('leftStreak').textContent = gameState.left.streak;
+            document.getElementById('rightScore').textContent = gameState.right.score;
+            document.getElementById('rightStreak').textContent = gameState.right.streak;
+
+            const leftLevel = LEVELS[Math.max(0, Math.min(gameState.left.level, LEVELS.length - 1))];
+            const rightLevel = LEVELS[Math.max(0, Math.min(gameState.right.level, LEVELS.length - 1))];
+
+            document.getElementById('leftLevel').textContent = leftLevel.name;
+            document.getElementById('leftStars').textContent = '★'.repeat(leftLevel.stars) || '☆';
+            document.getElementById('rightLevel').textContent = rightLevel.name;
+            document.getElementById('rightStars').textContent = '★'.repeat(rightLevel.stars) || '☆';
+        }
+
+        // Reset all lights
+        function resetLights() {
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById('light' + i).classList.remove('red-on');
+            }
+            document.getElementById('lightGreen1').classList.remove('green-on');
+            document.getElementById('lightGreen2').classList.remove('green-on');
+        }
+
+        // Reset round state
+        function resetRound() {
+            console.log('[DUEL] resetRound called');
+            gameState.greenLight = false;
+            gameState.greenLightTime = null;
+            gameState.countdownPhase = 0;
+            gameState.roundResolved = false;
+
+            // Reset player states
+            gameState.leftReconsider = false;
+            gameState.rightReconsider = false;
+            gameState.leftShotsUsed = 0;
+            gameState.rightShotsUsed = 0;
+            gameState.leftLastShotTime = null;
+            gameState.rightLastShotTime = null;
+            gameState.leftHit = false;
+            gameState.rightHit = false;
+
+            // Clear any pending timeouts
+            if (gameState.standoffTimeout) {
+                clearTimeout(gameState.standoffTimeout);
+                gameState.standoffTimeout = null;
+            }
+
+            // Stop accuracy updates and hide stats
+            stopAccuracyUpdates();
+            document.getElementById('leftStats').classList.add('hidden');
+            document.getElementById('rightStats').classList.add('hidden');
+
+            // Reset visual states
+            const leftPistol = document.getElementById('leftPistol');
+            const rightPistol = document.getElementById('rightPistol');
+            leftPistol.classList.remove('firing-left', 'raised-left');
+            rightPistol.classList.remove('firing-right', 'raised-right');
+            leftPistol.style.transform = '';
+            rightPistol.style.transform = '';
+
+            document.getElementById('leftSmoke').classList.remove('active');
+            document.getElementById('rightSmoke').classList.remove('active');
+
+            const leftAction = document.getElementById('leftAction');
+            const rightAction = document.getElementById('rightAction');
+            leftAction.classList.remove('visible', 'shot', 'reconsidered', 'early');
+            rightAction.classList.remove('visible', 'shot', 'reconsidered', 'early');
+            leftAction.textContent = '';
+            rightAction.textContent = '';
+
+            // Update shots display
+            updateShotsDisplay();
+
+            // Clear victory/defeat animations
+            clearVictoryDefeat();
+
+            document.getElementById('messageDisplay').style.display = 'none';
+            resetLights();
+        }
+
+        // Toggle continuous dueling mode
+        function toggleDuel() {
+            if (gameState.isRunning) {
+                // Pause
+                gameState.isRunning = false;
+                if (gameState.nextRoundTimeout) {
+                    clearTimeout(gameState.nextRoundTimeout);
+                    gameState.nextRoundTimeout = null;
+                }
+                updateButtonState();
+            } else {
+                // Start
+                gameState.isRunning = true;
+                updateButtonState();
+                startDuel();
+            }
+            // Keep focus on document for keyboard input
+            document.body.focus();
+        }
+
+        function updateButtonState() {
+            const btn = document.getElementById('startBtn');
+            if (gameState.isRunning) {
+                btn.textContent = 'Pause';
+                btn.style.background = 'linear-gradient(to bottom, #8b4914, #6b2a0a)';
+            } else {
+                btn.textContent = 'Begin Duel';
+                btn.style.background = '';
+            }
+        }
+
+        // Start duel
+        async function startDuel() {
+            if (gameState.inProgress || !gameState.isRunning) return;
+
+            resetRound();
+            gameState.inProgress = true;
+
+            // Show stats display at start if limited ammo mode
+            if (settings.maxShots < 99) {
+                updateStatsDisplay();
+            }
+
+            // Random timing for each light (F1 style)
+            const baseTiming = 800;
+            const variance = 400;
+
+            // Light up red lights one by one
+            for (let i = 1; i <= 6; i += 2) {
+                await sleep(baseTiming + Math.random() * variance);
+                if (!gameState.inProgress || !gameState.isRunning) return;
+                document.getElementById('light' + i).classList.add('red-on');
+                document.getElementById('light' + (i + 1)).classList.add('red-on');
+                gameState.countdownPhase = Math.ceil(i / 2);
+            }
+
+            // Random delay before green (1-3 seconds additional)
+            await sleep(1000 + Math.random() * 2000);
+            if (!gameState.inProgress || !gameState.isRunning) return;
+
+            // Green light!
+            gameState.greenLight = true;
+            gameState.greenLightTime = Date.now();
+            console.log('[DUEL] GREEN LIGHT! greenLight =', gameState.greenLight);
+            resetLights();
+            document.getElementById('lightGreen1').classList.add('green-on');
+            document.getElementById('lightGreen2').classList.add('green-on');
+
+            // Initialize stats display and start accuracy updates
+            updateStatsDisplay();
+            startAccuracyUpdates();
+
+            // Check if both players already shot early (before green)
+            // In the new system, we need both to have either hit or run out of shots, or reconsider
+            if ((gameState.leftHit || gameState.leftReconsider) &&
+                (gameState.rightHit || gameState.rightReconsider)) {
+                console.log('[DUEL] Both players already acted before green, resolving now');
+                resolveRound();
+            } else {
+                // Set a timeout for standoff if no one lands a hit within 8 seconds
+                gameState.standoffTimeout = setTimeout(() => {
+                    console.log('[DUEL] Standoff timeout reached');
+                    if (!gameState.roundResolved && gameState.greenLight) {
+                        resolveRound();
+                    }
+                }, 8000);
+            }
+        }
+
+        // Handle player actions
+        function handleAction(player, action) {
+            console.log('[DUEL] handleAction called:', player, action,
+                'inProgress:', gameState.inProgress,
+                'roundResolved:', gameState.roundResolved,
+                'greenLight:', gameState.greenLight);
+
+            if (!gameState.inProgress) {
+                console.log('[DUEL] Rejected: game not in progress');
+                return;
+            }
+            if (gameState.roundResolved) {
+                console.log('[DUEL] Rejected: round already resolved');
+                return;
+            }
+
+            const other = player === 'left' ? 'right' : 'left';
+
+            // Handle reconsider
+            if (action === 'reconsider') {
+                // Can only reconsider once, and not after shooting
+                if (gameState[player + 'Reconsider'] || gameState[player + 'ShotsUsed'] > 0) {
+                    console.log('[DUEL] Rejected: already reconsidered or already shot');
+                    return;
+                }
+                gameState[player + 'Reconsider'] = true;
+
+                // Show reconsider animation after green
+                if (gameState.greenLight) {
+                    const pistol = document.getElementById(player + 'Pistol');
+                    pistol.classList.add('raised-' + player);
+                    showAction(player, 'MERCY!', 'reconsidered');
+                    checkRoundEnd();
+                }
+                return;
+            }
+
+            // Handle shoot
+            if (action === 'shoot') {
+                // Check if already hit someone or was hit
+                if (gameState[player + 'Hit'] || gameState[other + 'Hit']) {
+                    console.log('[DUEL] Rejected: round already decided by hit');
+                    return;
+                }
+
+                // Check if reconsidered (can't shoot after reconsidering)
+                if (gameState[player + 'Reconsider']) {
+                    console.log('[DUEL] Rejected: already reconsidered');
+                    return;
+                }
+
+                // Check shots remaining
+                if (settings.maxShots < 99 && gameState[player + 'ShotsUsed'] >= settings.maxShots) {
+                    console.log('[DUEL] Rejected: out of shots');
+                    showAction(player, 'EMPTY!', 'early');
+                    return;
+                }
+
+                // Fire the shot
+                gameState[player + 'ShotsUsed']++;
+                const now = Date.now();
+                gameState[player + 'LastShotTime'] = now;
+
+                // Visual feedback
+                const pistol = document.getElementById(player + 'Pistol');
+                const smoke = document.getElementById(player + 'Smoke');
+
+                // Reset and retrigger animations
+                pistol.classList.remove('firing-' + player);
+                smoke.classList.remove('active');
+                void pistol.offsetWidth; // Force reflow
+                pistol.classList.add('firing-' + player);
+                smoke.classList.add('active');
+
+                // Play gunshot sound
+                playGunshot();
+
+                // Update shots display
+                updateShotsDisplay();
+
+                // Before green = early shot (always miss)
+                if (!gameState.greenLight) {
+                    showAction(player, 'TOO EARLY!', 'early');
+                    console.log('[DUEL] Shot fired early - will miss');
+                    return;
+                }
+
+                // After green - calculate hit chance
+                const hitChance = calculateHitChance(player);
+                const roll = Math.random() * 100;
+                const isHit = roll < hitChance;
+
+                console.log('[DUEL] Shot fired: chance=' + hitChance + '%, roll=' + roll.toFixed(1) + ', hit=' + isHit);
+
+                if (isHit) {
+                    gameState[player + 'Hit'] = true;
+                    showAction(player, 'HIT!', 'shot');
+
+                    // Check if other player reconsidered
+                    if (gameState[other + 'Reconsider']) {
+                        // Shot someone who showed mercy - dishonorable
+                        resolveRound();
+                    } else {
+                        // Clean hit - resolve round
+                        resolveRound();
+                    }
+                } else {
+                    showAction(player, 'MISS!', 'early');
+
+                    // Check if out of shots
+                    if (settings.maxShots < 99 && gameState[player + 'ShotsUsed'] >= settings.maxShots) {
+                        console.log('[DUEL] Player out of shots');
+                        checkRoundEnd();
+                    }
+                }
+            }
+        }
+
+        // Check if round should end
+        function checkRoundEnd() {
+            // Round ends when:
+            // 1. Someone landed a hit
+            // 2. Both players reconsidered
+            // 3. Both players are out of shots (in limited mode)
+
+            if (gameState.leftHit || gameState.rightHit) {
+                resolveRound();
+                return;
+            }
+
+            if (gameState.leftReconsider && gameState.rightReconsider) {
+                resolveRound();
+                return;
+            }
+
+            // Check if both are out of shots
+            if (settings.maxShots < 99) {
+                const leftDone = gameState.leftReconsider || gameState.leftShotsUsed >= settings.maxShots;
+                const rightDone = gameState.rightReconsider || gameState.rightShotsUsed >= settings.maxShots;
+                if (leftDone && rightDone) {
+                    resolveRound();
+                }
+            }
+        }
+
+        function showAction(player, text, className) {
+            const actionEl = document.getElementById(player + 'Action');
+            actionEl.textContent = text;
+            actionEl.classList.remove('shot', 'reconsidered', 'early');
+            actionEl.classList.add('visible', className);
+        }
+
+        // Resolve the round
+        function resolveRound() {
+            console.log('[DUEL] resolveRound called, roundResolved:', gameState.roundResolved, 'greenLight:', gameState.greenLight);
+            if (gameState.roundResolved) {
+                console.log('[DUEL] resolveRound rejected - already resolved');
+                return;
+            }
+            gameState.roundResolved = true;
+            console.log('[DUEL] Round is now resolved');
+
+            // Clear standoff timeout if it exists
+            if (gameState.standoffTimeout) {
+                clearTimeout(gameState.standoffTimeout);
+                gameState.standoffTimeout = null;
+            }
+
+            // Stop accuracy updates
+            stopAccuracyUpdates();
+
+            // Determine outcome using new hit-based system
+            let result = determineWinner();
+
+            // Apply result after a short delay
+            setTimeout(() => {
+                applyResult(result);
+                gameState.inProgress = false;
+
+                // Auto-start next round if still running
+                if (gameState.isRunning) {
+                    gameState.nextRoundTimeout = setTimeout(() => {
+                        if (gameState.isRunning) {
+                            startDuel();
+                        }
+                    }, 2500); // Wait 2.5 seconds before next round
+                }
+            }, 1000);
+        }
+
+        function determineWinner() {
+            const leftHit = gameState.leftHit;
+            const rightHit = gameState.rightHit;
+            const leftReconsider = gameState.leftReconsider;
+            const rightReconsider = gameState.rightReconsider;
+            const leftShots = gameState.leftShotsUsed;
+            const rightShots = gameState.rightShotsUsed;
+            const leftTime = gameState.leftLastShotTime;
+            const rightTime = gameState.rightLastShotTime;
+
+            console.log('[DUEL] determineWinner:', { leftHit, rightHit, leftReconsider, rightReconsider, leftShots, rightShots });
+
+            // Case 1: Both players hit (extremely rare with random timing)
+            if (leftHit && rightHit) {
+                // Whoever hit first wins
+                if (leftTime < rightTime) {
+                    return { type: 'winner', winner: 'left' };
+                } else if (rightTime < leftTime) {
+                    return { type: 'winner', winner: 'right' };
+                } else {
+                    return { type: 'draw' };
+                }
+            }
+
+            // Case 2: One player hit
+            if (leftHit) {
+                if (rightReconsider) {
+                    // Shot someone showing mercy - dishonorable win
+                    return { type: 'shot_merciful', winner: 'left', loser: 'right' };
+                }
+                return { type: 'winner', winner: 'left' };
+            }
+            if (rightHit) {
+                if (leftReconsider) {
+                    // Shot someone showing mercy - dishonorable win
+                    return { type: 'shot_merciful', winner: 'right', loser: 'left' };
+                }
+                return { type: 'winner', winner: 'right' };
+            }
+
+            // Case 3: Both reconsidered (no hits)
+            if (leftReconsider && rightReconsider) {
+                return { type: 'both_reconsider' };
+            }
+
+            // Case 4: One reconsidered, other shot but missed (or did nothing)
+            if (leftReconsider && rightShots > 0) {
+                // Right shot at merciful left but missed all shots
+                return { type: 'both_miss_mercy', merciful: 'left' };
+            }
+            if (rightReconsider && leftShots > 0) {
+                // Left shot at merciful right but missed all shots
+                return { type: 'both_miss_mercy', merciful: 'right' };
+            }
+
+            // Case 5: Both shot but both missed all shots
+            if (leftShots > 0 && rightShots > 0) {
+                return { type: 'both_miss' };
+            }
+
+            // Case 6: One reconsidered, other did nothing
+            if (leftReconsider && rightShots === 0) {
+                return { type: 'standoff', merciful: 'left' };
+            }
+            if (rightReconsider && leftShots === 0) {
+                return { type: 'standoff', merciful: 'right' };
+            }
+
+            // Case 7: One shot (and missed), other did nothing
+            if (leftShots > 0 && rightShots === 0 && !rightReconsider) {
+                return { type: 'missed_standoff', shooter: 'left' };
+            }
+            if (rightShots > 0 && leftShots === 0 && !leftReconsider) {
+                return { type: 'missed_standoff', shooter: 'right' };
+            }
+
+            // Case 8: Neither did anything (standoff timeout)
+            return { type: 'standoff' };
+        }
+
+        function applyResult(result) {
+            const msgDisplay = document.getElementById('messageDisplay');
+            const msgText = document.getElementById('messageText');
+            msgDisplay.style.display = 'block';
+
+            let winner = null;
+            let loser = null;
+
+            switch (result.type) {
+                case 'winner':
+                    msgText.textContent = (result.winner === 'left' ? 'FEDERALIST' : 'REPUBLICAN') + ' WINS!';
+                    msgText.className = 'message-text winner ' + result.winner + '-wins';
+                    winner = result.winner;
+                    loser = result.winner === 'left' ? 'right' : 'left';
+                    addWin(result.winner);
+                    addLoss(loser);
+                    break;
+
+                case 'both_reconsider':
+                    msgText.textContent = 'HONOR PREVAILS!';
+                    msgText.className = 'message-text honor';
+                    levelUp('left');
+                    levelUp('right');
+                    gameState.left.streak = 0;
+                    gameState.right.streak = 0;
+                    break;
+
+                case 'shot_merciful':
+                    msgText.textContent = (result.winner === 'left' ? 'FEDERALIST' : 'REPUBLICAN') + ' WINS... WITHOUT HONOR';
+                    msgText.className = 'message-text winner ' + result.winner + '-wins';
+                    winner = result.winner;
+                    loser = result.loser;
+                    addWin(result.winner);
+                    levelDown(result.winner); // Winner loses honor for shooting merciful opponent
+                    addLoss(result.loser);
+                    break;
+
+                case 'draw':
+                    msgText.textContent = 'A DRAW!';
+                    msgText.className = 'message-text draw';
+                    gameState.left.streak = 0;
+                    gameState.right.streak = 0;
+                    break;
+
+                case 'both_miss':
+                    msgText.textContent = 'BOTH MISS! DRAW!';
+                    msgText.className = 'message-text draw';
+                    gameState.left.streak = 0;
+                    gameState.right.streak = 0;
+                    break;
+
+                case 'both_miss_mercy':
+                    // One showed mercy, other shot but missed all
+                    const mercifulPlayer = result.merciful === 'left' ? 'FEDERALIST' : 'REPUBLICAN';
+                    msgText.textContent = mercifulPlayer + ' SHOWS MERCY... OPPONENT MISSED!';
+                    msgText.className = 'message-text honor';
+                    levelUp(result.merciful); // Merciful player gains honor for surviving
+                    break;
+
+                case 'missed_standoff':
+                    msgText.textContent = (result.shooter === 'left' ? 'FEDERALIST' : 'REPUBLICAN') + ' FIRES... AND MISSES!';
+                    msgText.className = 'message-text draw';
+                    break;
+
+                case 'standoff':
+                    msgText.textContent = 'STANDOFF... NO SHOTS FIRED';
+                    msgText.className = 'message-text draw';
+                    break;
+            }
+
+            // Show victory/defeat animations
+            showVictoryDefeat(winner, loser);
+
+            updateDisplay();
+            saveGame();
+        }
+
+        function addWin(player) {
+            gameState[player].score += 100;
+            gameState[player].streak += 1;
+
+            // Check for streak level up
+            if (gameState[player].streak >= 3) {
+                levelUp(player);
+                gameState[player].streak = 0;
+            }
+        }
+
+        function addLoss(player) {
+            gameState[player].streak = 0;
+        }
+
+        function levelUp(player) {
+            if (gameState[player].level < LEVELS.length - 1) {
+                gameState[player].level += 1;
+                gameState[player].score += 50;
+            }
+        }
+
+        function levelDown(player) {
+            if (gameState[player].level > 0) {
+                gameState[player].level -= 1;
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function resetGame() {
+            if (confirm('Reset all scores and progress?')) {
+                // Stop any ongoing game
+                if (gameState.nextRoundTimeout) {
+                    clearTimeout(gameState.nextRoundTimeout);
+                }
+                if (gameState.standoffTimeout) {
+                    clearTimeout(gameState.standoffTimeout);
+                }
+                gameState = {
+                    left: { score: 0, streak: 0, level: 1 },
+                    right: { score: 0, streak: 0, level: 1 },
+                    inProgress: false,
+                    isRunning: false,
+                    countdownPhase: 0,
+                    greenLight: false,
+                    greenLightTime: null,
+                    leftReconsider: false,
+                    rightReconsider: false,
+                    leftShotsUsed: 0,
+                    rightShotsUsed: 0,
+                    leftLastShotTime: null,
+                    rightLastShotTime: null,
+                    leftHit: false,
+                    rightHit: false,
+                    roundResolved: false,
+                    nextRoundTimeout: null,
+                    standoffTimeout: null
+                };
+                resetRound();
+                updateDisplay();
+                updateButtonState();
+                saveGame();
+            }
+        }
+
+        function closeInstructions() {
+            document.getElementById('instructionsOverlay').classList.add('hidden');
+            localStorage.setItem('duelInstructionsSeen', 'true');
+        }
+
+        // Keyboard handling
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            console.log('[DUEL] Key pressed:', key, 'inProgress:', gameState.inProgress);
+
+            // Allow spacebar to toggle duel even when not in progress
+            if (key === ' ' || key === 'spacebar') {
+                e.preventDefault();
+                toggleDuel();
+                return;
+            }
+
+            if (!gameState.inProgress) {
+                console.log('[DUEL] Key ignored: game not in progress');
+                return;
+            }
+
+            switch (key) {
+                case 'q':
+                    e.preventDefault();
+                    handleAction('left', 'shoot');
+                    break;
+                case 'a':
+                    e.preventDefault();
+                    handleAction('left', 'reconsider');
+                    break;
+                case 'l':
+                    e.preventDefault();
+                    handleAction('right', 'shoot');
+                    break;
+                case 'p':
+                    e.preventDefault();
+                    handleAction('right', 'reconsider');
+                    break;
+            }
+        });
+
+        // Initialize
+        window.onload = function() {
+            loadGame();
+
+            // Show instructions if first time
+            if (!localStorage.getItem('duelInstructionsSeen')) {
+                document.getElementById('instructionsOverlay').classList.remove('hidden');
+            } else {
+                document.getElementById('instructionsOverlay').classList.add('hidden');
+            }
+
+            // Ensure body can receive keyboard events
+            document.body.focus();
+        };
+
+        // Keep focus on body when clicking buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                setTimeout(() => document.body.focus(), 10);
+            }
+        });
+    </script>
+</body>
+</html>
