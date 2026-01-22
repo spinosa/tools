@@ -15,7 +15,7 @@
         DEFAULT_MAX_PRIME: 5000,
         DEFAULT_SPEED: 50,
         DEFAULT_TIGHTNESS: 0.5,
-        PARTICLE_SIZE: 0.15,
+        PARTICLE_SIZE: 0.5,
         ANIMATION_FRAME_BATCH: 10,
         CAMERA_DISTANCE: 100,
         SPIRAL_HEIGHT_SCALE: 0.3,
@@ -222,7 +222,7 @@
                     vColor = color;
                     vSize = size;
                     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                    gl_PointSize = size * (300.0 / -mvPosition.z);
+                    gl_PointSize = max(size * (300.0 / -mvPosition.z), 3.0);
                     gl_Position = projectionMatrix * mvPosition;
                 }
             `,
