@@ -126,9 +126,11 @@ body {
     touch-action: none;
 }
 
-#spiralCanvas {
+.visualization-container canvas {
     display: block;
     touch-action: none;
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* ============================================

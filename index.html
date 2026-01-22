@@ -9,17 +9,20 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Prime Spiral Visualizer</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Three.js for 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
     <div id="app">
         <!-- Main Visualization Area -->
         <header class="title-bar">
-            <h1>Prime Spiral</h1>
+            <h1>Prime Galaxy</h1>
             <span class="zoom-indicator" id="zoomIndicator">1.0x</span>
         </header>
 
-        <main class="visualization-container">
-            <canvas id="spiralCanvas"></canvas>
+        <main class="visualization-container" id="container">
+            <!-- Three.js will render here -->
 
             <!-- Prime Info Tooltip -->
             <div class="prime-tooltip" id="primeTooltip" aria-hidden="true">
@@ -28,10 +31,10 @@
                     <span class="tooltip-prime" id="tooltipPrime">7919</span>
                     <p class="tooltip-ordinal" id="tooltipOrdinal">The 1,000th prime</p>
                     <p class="tooltip-coords">
-                        <span id="tooltipRadius">r = 88.99</span>
+                        <span id="tooltipRadius">x, y, z</span>
                         <span id="tooltipAngle">&theta; = 7919 rad</span>
                     </p>
-                    <small>Tap to dismiss</small>
+                    <small>Drag to rotate &bull; Pinch to zoom</small>
                 </div>
             </div>
 
@@ -132,14 +135,14 @@
                         What am I seeing?
                     </summary>
                     <div class="info-content">
-                        <h3>The Prime Spiral</h3>
-                        <p>Every glowing dot represents a <strong>prime number</strong>&mdash;values divisible only by 1 and themselves. Each prime determines its own position in this spiral:</p>
+                        <h3>The Prime Spiral Galaxy</h3>
+                        <p>Every glowing dot represents a <strong>prime number</strong>&mdash;values divisible only by 1 and themselves. Each prime determines its own position in 3D space:</p>
                         <ul>
-                            <li><strong>Distance from center</strong> = &radic;(prime value)</li>
-                            <li><strong>Angle</strong> = prime value in radians</li>
+                            <li><strong>X &amp; Y</strong> = polar spiral (&radic;p &times; cos/sin)</li>
+                            <li><strong>Z (height)</strong> = based on prime index</li>
                         </ul>
-                        <p>Despite primes appearing randomly in the number line, plotting them this way reveals hidden structure. The spiral arms you see emerge from deep patterns in number theory.</p>
-                        <p class="highlight">You're witnessing the "DNA" of mathematics.</p>
+                        <p>Drag to rotate the universe, pinch to zoom in/out. The spiral arms emerge from deep patterns in number theory.</p>
+                        <p class="highlight">You're flying through the "DNA" of mathematics.</p>
                     </div>
                 </details>
 

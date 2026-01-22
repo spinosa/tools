@@ -1,6 +1,6 @@
 /**
- * Prime Spiral Visualizer
- * A mobile-first interactive visualization of prime number distribution
+ * Prime Spiral Galaxy - 3D Visualization
+ * Interactive Three.js visualization of prime number distribution
  */
 
 (function() {
@@ -15,29 +15,23 @@
         DEFAULT_MAX_PRIME: 5000,
         DEFAULT_SPEED: 50,
         DEFAULT_TIGHTNESS: 0.5,
-        DOT_BASE_SIZE: 3,
-        DOT_MIN_SIZE: 1.5,
-        DOT_MAX_SIZE: 6,
+        PARTICLE_SIZE: 0.15,
         ANIMATION_FRAME_BATCH: 10,
-        HIT_TEST_RADIUS: 20,
-        ZOOM_MIN: 0.5,
-        ZOOM_MAX: 10,
-        ZOOM_STEP: 0.2,
-        PAN_MOMENTUM_DECAY: 0.95,
-        PINCH_ZOOM_SENSITIVITY: 0.01
+        CAMERA_DISTANCE: 100,
+        SPIRAL_HEIGHT_SCALE: 0.3,
+        AUTO_ROTATE_SPEED: 0.5
     };
 
     const COLOR_THEMES = {
-        coral: { primary: '#ff6b6b', glow: 'rgba(255, 107, 107, 0.6)' },
-        gold: { primary: '#ffd93d', glow: 'rgba(255, 217, 61, 0.6)' },
-        ice: { primary: '#6bcfff', glow: 'rgba(107, 207, 255, 0.6)' },
-        neon: { primary: '#6bff8c', glow: 'rgba(107, 255, 140, 0.6)' },
-        rainbow: { primary: 'rainbow', glow: 'rgba(255, 255, 255, 0.4)' }
+        coral: { h: 0, s: 1.0, l: 0.7 },
+        gold: { h: 0.12, s: 1.0, l: 0.6 },
+        ice: { h: 0.55, s: 0.8, l: 0.7 },
+        neon: { h: 0.35, s: 1.0, l: 0.6 },
+        rainbow: null // Special case
     };
 
     const state = {
         primes: [],
-        primesCoords: null,
         visiblePrimeCount: 0,
         maxPrimeValue: CONFIG.DEFAULT_MAX_PRIME,
         animationSpeed: CONFIG.DEFAULT_SPEED,
@@ -45,52 +39,34 @@
         isPlaying: false,
         animationId: null,
 
-        // View state
-        zoom: 1,
-        panX: 0,
-        panY: 0,
-        targetZoom: 1,
-        targetPanX: 0,
-        targetPanY: 0,
-
         // Visual options
         colorTheme: 'coral',
-        glowIntensity: 1, // 0, 1, 2
+        glowIntensity: 1,
         showGrid: true,
         showMarkers: true,
-
-        // Touch state
-        touches: new Map(),
-        lastPinchDistance: 0,
-        isDragging: false,
-        dragStartX: 0,
-        dragStartY: 0,
-        momentum: { x: 0, y: 0 },
+        autoRotate: true,
 
         // Drawer state
         drawerOpen: false,
         drawerDragStartY: 0,
-        drawerCurrentY: 0,
-
-        // Canvas dimensions
-        canvasWidth: 0,
-        canvasHeight: 0,
-        centerX: 0,
-        centerY: 0,
-        baseScale: 1
+        drawerCurrentY: 0
     };
 
-    // ============================================
-    // DOM Elements
-    // ============================================
+    // Three.js objects
+    let scene, camera, renderer, controls;
+    let particleSystem, particleGeometry, particleMaterial;
+    let gridHelper, markerSprites = [];
+    let raycaster, mouse;
 
-    let canvas, ctx;
+    // DOM Elements
     const elements = {};
 
-    function cacheDOMElements() {
-        canvas = document.getElementById('spiralCanvas');
-        ctx = canvas.getContext('2d');
+    // ============================================
+    // DOM Elements Cache
+    // ============================================
 
+    function cacheDOMElements() {
+        elements.container = document.getElementById('container');
         elements.playPauseBtn = document.getElementById('playPauseBtn');
         elements.resetBtn = document.getElementById('resetBtn');
         elements.currentCount = document.getElementById('currentCount');
@@ -148,21 +124,6 @@
 
     function generatePrimesUpTo(maxValue) {
         state.primes = sieveOfEratosthenes(maxValue);
-        state.primesCoords = new Float32Array(state.primes.length * 2);
-        calculateCoordinates();
-    }
-
-    function calculateCoordinates() {
-        const tightness = state.tightness;
-
-        for (let i = 0; i < state.primes.length; i++) {
-            const p = state.primes[i];
-            const r = Math.pow(p, tightness);
-            const theta = p;
-
-            state.primesCoords[i * 2] = r * Math.cos(theta);
-            state.primesCoords[i * 2 + 1] = r * Math.sin(theta);
-        }
     }
 
     function getOrdinal(n) {
@@ -172,154 +133,273 @@
     }
 
     // ============================================
-    // Canvas Setup & Rendering
+    // Three.js Setup
     // ============================================
 
-    function setupCanvas() {
-        const dpr = window.devicePixelRatio || 1;
-        const container = canvas.parentElement;
-        const rect = container.getBoundingClientRect();
+    function initThreeJS() {
+        const container = elements.container;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
 
-        state.canvasWidth = rect.width;
-        state.canvasHeight = rect.height;
+        // Scene
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0d0d0d);
+        scene.fog = new THREE.FogExp2(0x0d0d0d, 0.003);
 
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        canvas.style.width = rect.width + 'px';
-        canvas.style.height = rect.height + 'px';
+        // Camera
+        camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 2000);
+        camera.position.set(0, 50, CONFIG.CAMERA_DISTANCE);
 
-        ctx.scale(dpr, dpr);
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
 
-        state.centerX = state.canvasWidth / 2;
-        state.centerY = state.canvasHeight / 2;
+        // Controls - OrbitControls for touch/drag rotation
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.screenSpacePanning = false;
+        controls.minDistance = 20;
+        controls.maxDistance = 500;
+        controls.maxPolarAngle = Math.PI;
+        controls.autoRotate = state.autoRotate;
+        controls.autoRotateSpeed = CONFIG.AUTO_ROTATE_SPEED;
+        controls.touches = {
+            ONE: THREE.TOUCH.ROTATE,
+            TWO: THREE.TOUCH.DOLLY_PAN
+        };
 
-        // Calculate base scale to fit the spiral
-        const maxR = Math.pow(state.maxPrimeValue, state.tightness);
-        const minDimension = Math.min(state.canvasWidth, state.canvasHeight);
-        state.baseScale = (minDimension * 0.45) / maxR;
+        // Raycaster for interaction
+        raycaster = new THREE.Raycaster();
+        raycaster.params.Points.threshold = 1;
+        mouse = new THREE.Vector2();
+
+        // Create particle system
+        createParticleSystem();
+
+        // Create grid
+        createGrid();
+
+        // Add ambient stars in background
+        createBackgroundStars();
+
+        // Handle resize
+        window.addEventListener('resize', onWindowResize);
+
+        // Click/tap handler for prime info
+        renderer.domElement.addEventListener('click', onCanvasClick);
+        renderer.domElement.addEventListener('touchend', onCanvasTouchEnd);
     }
 
-    function render() {
-        // Clear canvas
-        ctx.fillStyle = '#0d0d0d';
-        ctx.fillRect(0, 0, state.canvasWidth, state.canvasHeight);
+    function createParticleSystem() {
+        // Create geometry with positions for all possible primes
+        particleGeometry = new THREE.BufferGeometry();
 
-        // Apply view transformations
-        ctx.save();
-        ctx.translate(state.centerX + state.panX, state.centerY + state.panY);
-        ctx.scale(state.zoom * state.baseScale, state.zoom * state.baseScale);
+        const maxPrimes = sieveOfEratosthenes(CONFIG.MAX_PRIME_LIMIT).length;
+        const positions = new Float32Array(maxPrimes * 3);
+        const colors = new Float32Array(maxPrimes * 3);
+        const sizes = new Float32Array(maxPrimes);
 
-        // Draw grid
-        if (state.showGrid) {
-            drawGrid();
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        particleGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+        // Shader material for glowing particles
+        particleMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                pointSize: { value: CONFIG.PARTICLE_SIZE * 100 },
+                glowIntensity: { value: state.glowIntensity }
+            },
+            vertexShader: `
+                attribute float size;
+                attribute vec3 color;
+                varying vec3 vColor;
+                varying float vSize;
+
+                void main() {
+                    vColor = color;
+                    vSize = size;
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    gl_PointSize = size * (300.0 / -mvPosition.z);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform float glowIntensity;
+                varying vec3 vColor;
+                varying float vSize;
+
+                void main() {
+                    float dist = length(gl_PointCoord - vec2(0.5));
+                    if (dist > 0.5) discard;
+
+                    float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+                    float glow = exp(-dist * 3.0) * glowIntensity;
+
+                    vec3 finalColor = vColor + vColor * glow;
+                    gl_FragColor = vec4(finalColor, alpha);
+                }
+            `,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+        scene.add(particleSystem);
+    }
+
+    function updateParticles() {
+        const positions = particleGeometry.attributes.position.array;
+        const colors = particleGeometry.attributes.color.array;
+        const sizes = particleGeometry.attributes.size.array;
+
+        const theme = COLOR_THEMES[state.colorTheme];
+        const tightness = state.tightness;
+        const heightScale = CONFIG.SPIRAL_HEIGHT_SCALE;
+
+        for (let i = 0; i < state.visiblePrimeCount; i++) {
+            const p = state.primes[i];
+            const r = Math.pow(p, tightness);
+            const theta = p;
+
+            // 3D spiral coordinates
+            const x = r * Math.cos(theta) * 0.5;
+            const z = r * Math.sin(theta) * 0.5;
+            const y = (i / state.primes.length) * 50 * heightScale - 25 * heightScale;
+
+            positions[i * 3] = x;
+            positions[i * 3 + 1] = y;
+            positions[i * 3 + 2] = z;
+
+            // Color
+            let color;
+            if (state.colorTheme === 'rainbow') {
+                color = new THREE.Color().setHSL((p % 360) / 360, 0.8, 0.6);
+            } else {
+                color = new THREE.Color().setHSL(theme.h, theme.s, theme.l);
+            }
+
+            colors[i * 3] = color.r;
+            colors[i * 3 + 1] = color.g;
+            colors[i * 3 + 2] = color.b;
+
+            sizes[i] = CONFIG.PARTICLE_SIZE * (1 + Math.random() * 0.3);
         }
 
-        // Draw distance markers
-        if (state.showMarkers) {
-            drawMarkers();
+        // Hide remaining particles
+        for (let i = state.visiblePrimeCount; i < state.primes.length; i++) {
+            positions[i * 3] = 0;
+            positions[i * 3 + 1] = -1000;
+            positions[i * 3 + 2] = 0;
+            sizes[i] = 0;
         }
 
-        // Draw primes
-        drawPrimes();
+        particleGeometry.attributes.position.needsUpdate = true;
+        particleGeometry.attributes.color.needsUpdate = true;
+        particleGeometry.attributes.size.needsUpdate = true;
+        particleGeometry.setDrawRange(0, state.visiblePrimeCount);
+    }
 
-        ctx.restore();
+    function createGrid() {
+        // Create circular grid
+        gridHelper = new THREE.Group();
 
-        // Update UI
+        const gridMaterial = new THREE.LineBasicMaterial({
+            color: 0x2a3a3a,
+            transparent: true,
+            opacity: 0.15
+        });
+
+        // Concentric circles
+        for (let r = 10; r <= 60; r += 10) {
+            const circleGeometry = new THREE.BufferGeometry();
+            const points = [];
+            for (let i = 0; i <= 64; i++) {
+                const angle = (i / 64) * Math.PI * 2;
+                points.push(new THREE.Vector3(r * Math.cos(angle), 0, r * Math.sin(angle)));
+            }
+            circleGeometry.setFromPoints(points);
+            const circle = new THREE.Line(circleGeometry, gridMaterial);
+            gridHelper.add(circle);
+        }
+
+        // Radial lines
+        for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2;
+            const lineGeometry = new THREE.BufferGeometry();
+            lineGeometry.setFromPoints([
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(60 * Math.cos(angle), 0, 60 * Math.sin(angle))
+            ]);
+            const line = new THREE.Line(lineGeometry, gridMaterial);
+            gridHelper.add(line);
+        }
+
+        scene.add(gridHelper);
+        gridHelper.visible = state.showGrid;
+    }
+
+    function createBackgroundStars() {
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 2000;
+        const positions = new Float32Array(starCount * 3);
+
+        for (let i = 0; i < starCount; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 1000;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 1000;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 1000;
+        }
+
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const starMaterial = new THREE.PointsMaterial({
+            color: 0x444466,
+            size: 0.5,
+            transparent: true,
+            opacity: 0.6
+        });
+
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
+    }
+
+    function onWindowResize() {
+        const container = elements.container;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+    }
+
+    // ============================================
+    // Animation Loop
+    // ============================================
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        controls.update();
+        renderer.render(scene, camera);
+
         updateUI();
     }
 
-    function drawGrid() {
-        const maxR = Math.pow(state.maxPrimeValue, state.tightness);
-
-        ctx.strokeStyle = 'rgba(42, 58, 58, 0.15)';
-        ctx.lineWidth = 1 / (state.zoom * state.baseScale);
-
-        // Radial lines
-        for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 12) {
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(maxR * Math.cos(angle), maxR * Math.sin(angle));
-            ctx.stroke();
-        }
-
-        // Concentric circles
-        const step = Math.pow(1000, state.tightness);
-        for (let r = step; r <= maxR; r += step) {
-            ctx.beginPath();
-            ctx.arc(0, 0, r, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-    }
-
-    function drawMarkers() {
-        const maxR = Math.pow(state.maxPrimeValue, state.tightness);
-        const step = Math.pow(1000, state.tightness);
-
-        ctx.fillStyle = '#4ecdc4';
-        ctx.font = `${12 / (state.zoom * state.baseScale)}px -apple-system, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        let valueStep = 1000;
-        for (let r = step; r <= maxR; r += step) {
-            const x = r + 10 / (state.zoom * state.baseScale);
-            ctx.fillText(valueStep.toLocaleString(), x, 0);
-            valueStep += 1000;
-        }
-    }
-
-    function drawPrimes() {
-        const theme = COLOR_THEMES[state.colorTheme];
-        const dotSize = CONFIG.DOT_BASE_SIZE / (state.zoom * state.baseScale);
-        const glowSize = dotSize * (2 + state.glowIntensity);
-
-        for (let i = 0; i < state.visiblePrimeCount; i++) {
-            const x = state.primesCoords[i * 2];
-            const y = state.primesCoords[i * 2 + 1];
-
-            let color = theme.primary;
-            let glowColor = theme.glow;
-
-            if (theme.primary === 'rainbow') {
-                const hue = (state.primes[i] % 360);
-                color = `hsl(${hue}, 80%, 60%)`;
-                glowColor = `hsla(${hue}, 80%, 60%, 0.5)`;
-            }
-
-            // Draw glow
-            if (state.glowIntensity > 0) {
-                const gradient = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
-                gradient.addColorStop(0, glowColor);
-                gradient.addColorStop(1, 'transparent');
-
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(x, y, glowSize, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            // Draw dot
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(x, y, dotSize, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-
-    // ============================================
-    // Animation
-    // ============================================
-
-    function startAnimation() {
+    function startPrimeAnimation() {
         if (state.isPlaying) return;
 
         state.isPlaying = true;
         elements.playPauseBtn.classList.add('playing');
+        controls.autoRotate = true;
 
-        animate();
+        animatePrimes();
     }
 
-    function stopAnimation() {
+    function stopPrimeAnimation() {
         state.isPlaying = false;
         elements.playPauseBtn.classList.remove('playing');
 
@@ -331,22 +411,21 @@
 
     function toggleAnimation() {
         if (state.isPlaying) {
-            stopAnimation();
+            stopPrimeAnimation();
         } else {
-            startAnimation();
+            startPrimeAnimation();
         }
     }
 
     function resetAnimation() {
-        stopAnimation();
+        stopPrimeAnimation();
         state.visiblePrimeCount = 0;
-        render();
+        updateParticles();
     }
 
-    function animate() {
+    function animatePrimes() {
         if (!state.isPlaying) return;
 
-        // Calculate batch size based on speed
         const batchSize = Math.ceil(state.animationSpeed / 10) * CONFIG.ANIMATION_FRAME_BATCH;
 
         if (state.visiblePrimeCount < state.primes.length) {
@@ -354,309 +433,65 @@
                 state.visiblePrimeCount + batchSize,
                 state.primes.length
             );
-            render();
-            state.animationId = requestAnimationFrame(animate);
+            updateParticles();
+            state.animationId = requestAnimationFrame(animatePrimes);
         } else {
-            stopAnimation();
+            stopPrimeAnimation();
         }
     }
 
     // ============================================
-    // Touch & Gesture Handling
+    // Interaction Handlers
     // ============================================
 
-    function setupTouchHandlers() {
-        // Canvas touch events
-        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-        canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-        canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
-
-        // Mouse events for desktop
-        canvas.addEventListener('mousedown', handleMouseDown);
-        canvas.addEventListener('mousemove', handleMouseMove);
-        canvas.addEventListener('mouseup', handleMouseUp);
-        canvas.addEventListener('mouseleave', handleMouseUp);
-        canvas.addEventListener('wheel', handleWheel, { passive: false });
-
-        // Double tap/click
-        canvas.addEventListener('dblclick', handleDoubleClick);
-
-        // Zoom buttons
-        elements.zoomIn.addEventListener('click', () => zoomBy(CONFIG.ZOOM_STEP));
-        elements.zoomOut.addEventListener('click', () => zoomBy(-CONFIG.ZOOM_STEP));
-        elements.zoomReset.addEventListener('click', resetView);
-
-        // Single tap for prime info
-        canvas.addEventListener('click', handleCanvasClick);
+    function onCanvasClick(event) {
+        handleInteraction(event.clientX, event.clientY);
     }
 
-    function handleTouchStart(e) {
-        e.preventDefault();
-
-        for (const touch of e.changedTouches) {
-            state.touches.set(touch.identifier, {
-                x: touch.clientX,
-                y: touch.clientY,
-                startX: touch.clientX,
-                startY: touch.clientY,
-                startTime: Date.now()
-            });
+    function onCanvasTouchEnd(event) {
+        if (event.changedTouches.length === 1) {
+            const touch = event.changedTouches[0];
+            handleInteraction(touch.clientX, touch.clientY);
         }
-
-        if (state.touches.size === 2) {
-            const touchArray = Array.from(state.touches.values());
-            state.lastPinchDistance = getDistance(touchArray[0], touchArray[1]);
-        }
-
-        state.isDragging = true;
-        state.momentum = { x: 0, y: 0 };
     }
 
-    function handleTouchMove(e) {
-        e.preventDefault();
+    function handleInteraction(clientX, clientY) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
-        for (const touch of e.changedTouches) {
-            if (state.touches.has(touch.identifier)) {
-                const prev = state.touches.get(touch.identifier);
-                state.touches.set(touch.identifier, {
-                    ...prev,
-                    x: touch.clientX,
-                    y: touch.clientY,
-                    prevX: prev.x,
-                    prevY: prev.y
-                });
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObject(particleSystem);
+
+        if (intersects.length > 0) {
+            const index = intersects[0].index;
+            if (index < state.visiblePrimeCount) {
+                showTooltip(index, clientX, clientY);
+                triggerHaptic();
             }
-        }
-
-        if (state.touches.size === 1 && state.zoom > 1) {
-            // Single finger pan
-            const touch = state.touches.values().next().value;
-            const dx = touch.x - (touch.prevX || touch.x);
-            const dy = touch.y - (touch.prevY || touch.y);
-
-            state.panX += dx;
-            state.panY += dy;
-            state.momentum = { x: dx, y: dy };
-
-            render();
-        } else if (state.touches.size === 2) {
-            // Pinch zoom
-            const touchArray = Array.from(state.touches.values());
-            const distance = getDistance(touchArray[0], touchArray[1]);
-            const delta = distance - state.lastPinchDistance;
-
-            if (Math.abs(delta) > 1) {
-                const zoomDelta = delta * CONFIG.PINCH_ZOOM_SENSITIVITY;
-                zoomBy(zoomDelta);
-                state.lastPinchDistance = distance;
-            }
-        }
-    }
-
-    function handleTouchEnd(e) {
-        for (const touch of e.changedTouches) {
-            const touchData = state.touches.get(touch.identifier);
-
-            // Check for tap (short duration, minimal movement)
-            if (touchData) {
-                const duration = Date.now() - touchData.startTime;
-                const distance = getDistance(
-                    { x: touchData.startX, y: touchData.startY },
-                    { x: touch.clientX, y: touch.clientY }
-                );
-
-                if (duration < 300 && distance < 10) {
-                    handleTap(touch.clientX, touch.clientY);
-                }
-            }
-
-            state.touches.delete(touch.identifier);
-        }
-
-        if (state.touches.size === 0) {
-            state.isDragging = false;
-            applyMomentum();
-        }
-    }
-
-    function handleMouseDown(e) {
-        state.isDragging = true;
-        state.dragStartX = e.clientX - state.panX;
-        state.dragStartY = e.clientY - state.panY;
-        state.momentum = { x: 0, y: 0 };
-        canvas.style.cursor = 'grabbing';
-    }
-
-    function handleMouseMove(e) {
-        if (!state.isDragging || state.zoom <= 1) return;
-
-        const dx = e.clientX - state.dragStartX - state.panX;
-        const dy = e.clientY - state.dragStartY - state.panY;
-
-        state.panX = e.clientX - state.dragStartX;
-        state.panY = e.clientY - state.dragStartY;
-        state.momentum = { x: dx, y: dy };
-
-        render();
-    }
-
-    function handleMouseUp() {
-        state.isDragging = false;
-        canvas.style.cursor = 'default';
-        applyMomentum();
-    }
-
-    function handleWheel(e) {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -CONFIG.ZOOM_STEP : CONFIG.ZOOM_STEP;
-        zoomBy(delta);
-    }
-
-    function handleDoubleClick(e) {
-        if (state.zoom > 1) {
-            resetView();
-        } else {
-            zoomTo(2, e.clientX, e.clientY);
-        }
-    }
-
-    function handleCanvasClick(e) {
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        const prime = findPrimeAtPoint(x, y);
-
-        if (prime) {
-            showTooltip(prime, e.clientX, e.clientY);
         } else {
             hideTooltip();
         }
-    }
-
-    function handleTap(clientX, clientY) {
-        const rect = canvas.getBoundingClientRect();
-        const x = clientX - rect.left;
-        const y = clientY - rect.top;
-
-        const prime = findPrimeAtPoint(x, y);
-
-        if (prime) {
-            showTooltip(prime, clientX, clientY);
-            triggerHaptic();
-        } else {
-            hideTooltip();
-        }
-    }
-
-    function findPrimeAtPoint(canvasX, canvasY) {
-        // Convert canvas coordinates to spiral coordinates
-        const spiralX = (canvasX - state.centerX - state.panX) / (state.zoom * state.baseScale);
-        const spiralY = (canvasY - state.centerY - state.panY) / (state.zoom * state.baseScale);
-
-        const hitRadius = CONFIG.HIT_TEST_RADIUS / (state.zoom * state.baseScale);
-
-        for (let i = state.visiblePrimeCount - 1; i >= 0; i--) {
-            const px = state.primesCoords[i * 2];
-            const py = state.primesCoords[i * 2 + 1];
-
-            const dx = spiralX - px;
-            const dy = spiralY - py;
-
-            if (dx * dx + dy * dy < hitRadius * hitRadius) {
-                return {
-                    value: state.primes[i],
-                    index: i,
-                    x: px,
-                    y: py
-                };
-            }
-        }
-
-        return null;
-    }
-
-    function applyMomentum() {
-        if (Math.abs(state.momentum.x) < 0.5 && Math.abs(state.momentum.y) < 0.5) return;
-
-        state.panX += state.momentum.x;
-        state.panY += state.momentum.y;
-        state.momentum.x *= CONFIG.PAN_MOMENTUM_DECAY;
-        state.momentum.y *= CONFIG.PAN_MOMENTUM_DECAY;
-
-        render();
-        requestAnimationFrame(applyMomentum);
-    }
-
-    function getDistance(p1, p2) {
-        const dx = p1.x - p2.x;
-        const dy = p1.y - p2.y;
-        return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    // ============================================
-    // Zoom & Pan
-    // ============================================
-
-    function zoomBy(delta) {
-        const newZoom = Math.max(CONFIG.ZOOM_MIN, Math.min(CONFIG.ZOOM_MAX, state.zoom + delta));
-
-        if (newZoom !== state.zoom) {
-            state.zoom = newZoom;
-            updateZoomIndicator();
-            render();
-        }
-    }
-
-    function zoomTo(targetZoom, clientX, clientY) {
-        const rect = canvas.getBoundingClientRect();
-        const centerX = clientX - rect.left - state.centerX;
-        const centerY = clientY - rect.top - state.centerY;
-
-        const scale = targetZoom / state.zoom;
-        state.panX = centerX - (centerX - state.panX) * scale;
-        state.panY = centerY - (centerY - state.panY) * scale;
-        state.zoom = targetZoom;
-
-        updateZoomIndicator();
-        render();
-    }
-
-    function resetView() {
-        state.zoom = 1;
-        state.panX = 0;
-        state.panY = 0;
-        updateZoomIndicator();
-        render();
-    }
-
-    function updateZoomIndicator() {
-        elements.zoomIndicator.textContent = state.zoom.toFixed(1) + 'x';
-        elements.zoomIndicator.classList.toggle('visible', state.zoom !== 1);
     }
 
     // ============================================
     // Tooltip
     // ============================================
 
-    function showTooltip(prime, clientX, clientY) {
-        const r = Math.pow(prime.value, state.tightness).toFixed(2);
-        const theta = prime.value;
+    function showTooltip(index, clientX, clientY) {
+        const prime = state.primes[index];
+        const r = Math.pow(prime, state.tightness).toFixed(2);
 
-        elements.tooltipPrime.textContent = prime.value.toLocaleString();
-        elements.tooltipOrdinal.textContent = `The ${getOrdinal(prime.index + 1)} prime`;
+        elements.tooltipPrime.textContent = prime.toLocaleString();
+        elements.tooltipOrdinal.textContent = `The ${getOrdinal(index + 1)} prime`;
         elements.tooltipRadius.textContent = `r = ${r}`;
-        elements.tooltipAngle.textContent = `θ = ${theta} rad`;
+        elements.tooltipAngle.textContent = `θ = ${prime} rad`;
 
         const tooltip = elements.primeTooltip;
-        const tooltipRect = tooltip.getBoundingClientRect();
 
-        // Position tooltip
         let left = clientX - 80;
-        let top = clientY - tooltipRect.height - 20;
+        let top = clientY - 150;
 
-        // Keep within viewport
         left = Math.max(10, Math.min(window.innerWidth - 170, left));
         top = Math.max(10, top);
 
@@ -676,7 +511,7 @@
     }
 
     // ============================================
-    // Drawer
+    // Drawer Controls
     // ============================================
 
     function setupDrawer() {
@@ -695,7 +530,6 @@
         elements.drawerHint.addEventListener('click', openDrawer);
         elements.drawerOverlay.addEventListener('click', closeDrawer);
 
-        // Swipe up on mini control bar
         elements.miniControlBar.addEventListener('touchstart', (e) => {
             state.drawerDragStartY = e.touches[0].clientY;
         }, { passive: true });
@@ -757,7 +591,7 @@
     }
 
     // ============================================
-    // Controls
+    // Controls Setup
     // ============================================
 
     function setupControls() {
@@ -780,7 +614,6 @@
                 elements.maxPrimeSlider.value = value;
                 updateMaxPrime(value);
 
-                // Update active state
                 elements.presetBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
 
@@ -796,9 +629,7 @@
         // Tightness Slider
         elements.tightnessSlider.addEventListener('input', debounce((e) => {
             state.tightness = parseFloat(e.target.value);
-            calculateCoordinates();
-            setupCanvas();
-            render();
+            updateParticles();
         }, 50));
 
         // Visual Settings
@@ -807,6 +638,18 @@
         elements.gridBtn.addEventListener('click', toggleGrid);
         elements.markersBtn.addEventListener('click', toggleMarkers);
 
+        // Zoom buttons
+        elements.zoomIn.addEventListener('click', () => {
+            camera.position.multiplyScalar(0.8);
+        });
+        elements.zoomOut.addEventListener('click', () => {
+            camera.position.multiplyScalar(1.2);
+        });
+        elements.zoomReset.addEventListener('click', () => {
+            camera.position.set(0, 50, CONFIG.CAMERA_DISTANCE);
+            controls.reset();
+        });
+
         // Keyboard shortcuts
         document.addEventListener('keydown', handleKeyboard);
     }
@@ -814,17 +657,14 @@
     function updateMaxPrime(value) {
         state.maxPrimeValue = value;
         generatePrimesUpTo(value);
-        setupCanvas();
 
-        // Update visible count if needed
         if (state.visiblePrimeCount > state.primes.length) {
             state.visiblePrimeCount = state.primes.length;
         }
 
-        render();
+        updateParticles();
         updateStats();
 
-        // Update preset button states
         elements.presetBtns.forEach(btn => {
             btn.classList.toggle('active', parseInt(btn.dataset.value) === value);
         });
@@ -834,28 +674,27 @@
         const themes = Object.keys(COLOR_THEMES);
         const currentIndex = themes.indexOf(state.colorTheme);
         state.colorTheme = themes[(currentIndex + 1) % themes.length];
-        render();
+        updateParticles();
         triggerHaptic();
     }
 
     function cycleGlowIntensity() {
         state.glowIntensity = (state.glowIntensity + 1) % 3;
         elements.glowBtn.classList.toggle('active', state.glowIntensity > 0);
-        render();
+        particleMaterial.uniforms.glowIntensity.value = state.glowIntensity;
         triggerHaptic();
     }
 
     function toggleGrid() {
         state.showGrid = !state.showGrid;
         elements.gridBtn.classList.toggle('active', state.showGrid);
-        render();
+        gridHelper.visible = state.showGrid;
         triggerHaptic();
     }
 
     function toggleMarkers() {
         state.showMarkers = !state.showMarkers;
         elements.markersBtn.classList.toggle('active', state.showMarkers);
-        render();
         triggerHaptic();
     }
 
@@ -873,16 +712,6 @@
             case 'r':
             case 'R':
                 resetAnimation();
-                break;
-            case '+':
-            case '=':
-                zoomBy(CONFIG.ZOOM_STEP);
-                break;
-            case '-':
-                zoomBy(-CONFIG.ZOOM_STEP);
-                break;
-            case '0':
-                resetView();
                 break;
             case 'g':
             case 'G':
@@ -930,35 +759,31 @@
     function init() {
         cacheDOMElements();
         generatePrimesUpTo(state.maxPrimeValue);
-        setupCanvas();
-        setupTouchHandlers();
+
+        initThreeJS();
         setupDrawer();
         setupControls();
 
         updateStats();
-        render();
 
-        // Start animation after a brief delay
+        // Start render loop
+        animate();
+
+        // Start prime animation after a brief delay
         setTimeout(() => {
-            startAnimation();
+            startPrimeAnimation();
         }, 500);
 
-        // Handle resize
-        window.addEventListener('resize', debounce(() => {
-            setupCanvas();
-            render();
-        }, 100));
-
-        // Handle visibility change (pause when tab hidden)
+        // Handle visibility change
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && state.isPlaying) {
-                stopAnimation();
+                stopPrimeAnimation();
             }
         });
 
         // Dismiss tooltip on outside tap
         document.addEventListener('click', (e) => {
-            if (!elements.primeTooltip.contains(e.target) && !canvas.contains(e.target)) {
+            if (!elements.primeTooltip.contains(e.target) && !renderer.domElement.contains(e.target)) {
                 hideTooltip();
             }
         });
