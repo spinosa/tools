@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#0d0d0d">
+    <meta name="description" content="Interactive Prime Spiral Visualizer - Discover the hidden cosmic patterns within prime numbers">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Prime Spiral Visualizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Main Visualization Area -->
+        <header class="title-bar">
+            <h1>Prime Spiral</h1>
+            <span class="zoom-indicator" id="zoomIndicator">1.0x</span>
+        </header>
+
+        <main class="visualization-container">
+            <canvas id="spiralCanvas"></canvas>
+
+            <!-- Prime Info Tooltip -->
+            <div class="prime-tooltip" id="primeTooltip" aria-hidden="true">
+                <div class="tooltip-content">
+                    <span class="tooltip-dot">&#10022;</span>
+                    <span class="tooltip-prime" id="tooltipPrime">7919</span>
+                    <p class="tooltip-ordinal" id="tooltipOrdinal">The 1,000th prime</p>
+                    <p class="tooltip-coords">
+                        <span id="tooltipRadius">r = 88.99</span>
+                        <span id="tooltipAngle">&theta; = 7919 rad</span>
+                    </p>
+                    <small>Tap to dismiss</small>
+                </div>
+            </div>
+
+            <!-- Floating Zoom Controls -->
+            <div class="zoom-controls" id="zoomControls">
+                <button class="zoom-btn" id="zoomIn" aria-label="Zoom in">+</button>
+                <button class="zoom-btn" id="zoomOut" aria-label="Zoom out">&minus;</button>
+                <button class="zoom-btn reset" id="zoomReset" aria-label="Reset view">&#8634;</button>
+            </div>
+        </main>
+
+        <!-- Mini Control Bar (Always Visible) -->
+        <div class="mini-control-bar" id="miniControlBar">
+            <div class="mini-controls">
+                <button class="control-btn play-btn" id="playPauseBtn" aria-label="Play/Pause animation">
+                    <span class="play-icon">&#9654;</span>
+                    <span class="pause-icon">&#10074;&#10074;</span>
+                </button>
+                <button class="control-btn" id="resetBtn" aria-label="Reset animation">&#8634; Reset</button>
+            </div>
+            <div class="progress-info">
+                <span class="prime-count">Primes: <strong id="currentCount">0</strong> / <strong id="maxCount">5,000</strong></span>
+            </div>
+            <div class="drawer-hint" id="drawerHint">
+                <span class="hint-arrow">&#9650;</span>
+                <span>Swipe up for controls</span>
+            </div>
+        </div>
+
+        <!-- Bottom Drawer -->
+        <div class="bottom-drawer" id="bottomDrawer" aria-hidden="true">
+            <div class="drawer-handle" id="drawerHandle" role="button" aria-label="Toggle controls drawer" tabindex="0">
+                <span class="handle-bar"></span>
+            </div>
+
+            <div class="drawer-content">
+                <!-- Max Prime Value Slider -->
+                <div class="control-group">
+                    <label for="maxPrimeSlider">Max Prime Value</label>
+                    <input type="range" id="maxPrimeSlider" class="slider" min="100" max="50000" value="5000" step="100">
+                    <div class="slider-labels">
+                        <span>100</span>
+                        <span>5K</span>
+                        <span>50K</span>
+                    </div>
+                    <div class="preset-buttons">
+                        <button class="preset-btn" data-value="1000">1K</button>
+                        <button class="preset-btn active" data-value="5000">5K</button>
+                        <button class="preset-btn" data-value="10000">10K</button>
+                        <button class="preset-btn" data-value="25000">25K</button>
+                    </div>
+                </div>
+
+                <!-- Animation Speed Slider -->
+                <div class="control-group">
+                    <label for="speedSlider">Animation Speed</label>
+                    <div class="slider-with-icons">
+                        <span class="slider-icon">&#128034;</span>
+                        <input type="range" id="speedSlider" class="slider" min="1" max="100" value="50">
+                        <span class="slider-icon">&#9889;</span>
+                    </div>
+                </div>
+
+                <!-- Spiral Tightness Slider -->
+                <div class="control-group">
+                    <label for="tightnessSlider">Spiral Tightness</label>
+                    <input type="range" id="tightnessSlider" class="slider" min="0.3" max="1" value="0.5" step="0.05">
+                    <div class="slider-labels">
+                        <span>Loose</span>
+                        <span>Tight</span>
+                    </div>
+                </div>
+
+                <!-- Visual Settings Icons -->
+                <div class="visual-settings">
+                    <button class="setting-btn" id="colorBtn" aria-label="Change color theme">
+                        <span class="setting-icon">&#127912;</span>
+                        <span class="setting-label">Color</span>
+                    </button>
+                    <button class="setting-btn" id="glowBtn" aria-label="Toggle glow effect">
+                        <span class="setting-icon">&#128294;</span>
+                        <span class="setting-label">Glow</span>
+                    </button>
+                    <button class="setting-btn active" id="gridBtn" aria-label="Toggle grid">
+                        <span class="setting-icon">&#128208;</span>
+                        <span class="setting-label">Grid</span>
+                    </button>
+                    <button class="setting-btn active" id="markersBtn" aria-label="Toggle distance markers">
+                        <span class="setting-icon">&#128207;</span>
+                        <span class="setting-label">Markers</span>
+                    </button>
+                </div>
+
+                <!-- Educational Section -->
+                <details class="info-section" id="infoSection">
+                    <summary class="info-toggle">
+                        <span class="info-icon">&#8505;&#65039;</span>
+                        What am I seeing?
+                    </summary>
+                    <div class="info-content">
+                        <h3>The Prime Spiral</h3>
+                        <p>Every glowing dot represents a <strong>prime number</strong>&mdash;values divisible only by 1 and themselves. Each prime determines its own position in this spiral:</p>
+                        <ul>
+                            <li><strong>Distance from center</strong> = &radic;(prime value)</li>
+                            <li><strong>Angle</strong> = prime value in radians</li>
+                        </ul>
+                        <p>Despite primes appearing randomly in the number line, plotting them this way reveals hidden structure. The spiral arms you see emerge from deep patterns in number theory.</p>
+                        <p class="highlight">You're witnessing the "DNA" of mathematics.</p>
+                    </div>
+                </details>
+
+                <!-- Quick Stats -->
+                <div class="quick-stats" id="quickStats">
+                    <span id="totalPrimes">0 primes</span>
+                    <span class="stat-separator">&middot;</span>
+                    <span id="maxPrimeValue">up to 0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overlay for drawer backdrop -->
+        <div class="drawer-overlay" id="drawerOverlay"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
